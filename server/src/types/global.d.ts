@@ -1,5 +1,12 @@
-interface queueObject
+interface Position
 {
-    userId: string;
-    ws: import('ws').WebSocket;
+    x: number;
+    y: number;
+}
+
+interface RenderData
+{
+    message?: string;
+    player1?: Position;
+    player2?: Position;
 }

@@ -41,7 +41,7 @@ server.on('upgrade', function(req, socket, head)
 		socket.destroy();
 		return;
 	}
-	gs.addPlayer(req, socket, head, userId);
+	gs.loginPlayer(req, socket, head, userId);
 });
 
 server.listen(8080);

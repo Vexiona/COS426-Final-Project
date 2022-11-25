@@ -1,4 +1,5 @@
 import './style.css';
+import { Scene } from "./scene.js";
 import { Renderer } from './renderer.js';
 
 function connect(value: Response)
@@ -30,7 +31,6 @@ function login()
 
 function main()
 {
-    login();
     const canvasDiv = document.createElement('div');
     const canvas = document.createElement('canvas');
     canvas.id = 'game-window';
@@ -39,12 +39,15 @@ function main()
     canvasDiv.appendChild(canvas);
     document.body.appendChild(canvasDiv);
 
-    const renderer = Renderer.initialize(canvas);
-    renderer.catch((reason: Error) => { console.log(reason.message); });
-    renderer.then((renderer: Renderer) =>
-    {
-        renderer.begin();
-    });
+
+    const scene: Scene = new Scene();
+    
+    const renderer = new Renderer(canvas, scene);
+    
+    renderer.Initialize()
+        .then(() => {
+            login();
+        });
 }
 
 window.onload = main;

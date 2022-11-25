@@ -3,20 +3,7 @@ import internal from 'stream';
 import WebSocket from 'ws';
 import { v4 as uuidv4 } from 'uuid';
 import { GameServer } from './gserver.js';
-
-export function validateWs(ws: WebSocket.WebSocket): boolean
-{
-    const state = ws.readyState;
-    if(state === undefined || state == WebSocket.CLOSED || state == WebSocket.CLOSING)
-        return false;
-    else if(state == WebSocket.CONNECTING)
-    {
-        console.log("Something went terribly wrong. Code: 06499637441373781090");
-        ws.close();
-        return false;
-    }
-    return true;
-}
+import { Player } from './player.js';
 
 export class GameSocketServer
 {
@@ -47,23 +34,8 @@ export class GameSocketServer
             });
             ws.send('Hello!');
 
-            gs.queueUp({ userId: userId, ws: ws });
+            gs.newPlayer(new Player(userId, ws));
         });
-    }
-
-    readyState(userId: string): 0 | 1 | 2 | 3 | undefined
-    {
-        return this.map.get(userId)?.readyState;
-    }
-
-    send(userId: string, data: any): void
-    {
-        this.map.get(userId)?.send(data);
-    }
-
-    close(userId: string): void
-    {
-        this.map.get(userId)?.close();
     }
 
     newId(): string

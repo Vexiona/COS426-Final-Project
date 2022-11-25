@@ -1,6 +1,6 @@
 {
   "name": "cos426-final-project-server",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Server code for game",
   "main": "index.js",
   "type": "module",

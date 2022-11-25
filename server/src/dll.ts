@@ -70,8 +70,6 @@ export class DLL
 
     pop_front()
     {
-        if(this.size == 0)
-            return undefined;
         this.size--;
         const value = this.front.next.value;
         this.front.next.next.prev = this.front;
@@ -81,15 +79,13 @@ export class DLL
 
     pop_back()
     {
-        if(this.size == 0)
-            return undefined;
         this.size--;
         const value = this.back.prev.value;
         this.back.prev.prev.next = this.back;
         this.back.prev = this.back.prev.prev;
     }
 
-    public static iterator = class 
+    public static iterator = class
     {
         private superThis: DLL;
         private node: Node;

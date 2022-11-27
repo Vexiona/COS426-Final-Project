@@ -27,7 +27,7 @@ export class GameServer
         this.queue = new GameQueue(this);
         this.lobbies = new DLL();
         this.playerMap = new Map<string, playerLocation_t>();
-        setInterval(this.roundRobin, 10);
+        setInterval(this.roundRobin, 4);
     }
 
     newId(): string

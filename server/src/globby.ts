@@ -19,9 +19,9 @@ export class GameLobby
         this.state = GameLobby.ACTIVE;
         this.players = people;
 
-        this.game = new Game();
-        for(let i=0; i<people.length; i++)
-            people[i].send("Player " + i);
+        this.game = new Game(this.players);
+        for(let i = 0; i < people.length; i++)
+            people[i].send(JSON.stringify({ message: "Player " + i }));
     }
 
     getState(): GameState
@@ -43,7 +43,7 @@ export class GameLobby
     gameTick(): void
     {
         const renderData: string = JSON.stringify(this.game.physics());
-        for(let i=0; i<this.players.length; i++)
+        for(let i = 0; i < this.players.length; i++)
         {
             this.players[i].send(renderData);
         }

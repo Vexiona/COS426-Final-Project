@@ -37,16 +37,20 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
     let screen_size: vec2<u32> = textureDimensions(color_buffer);
     let screen_pos : vec2<i32> = vec2<i32>(i32(GlobalInvocationID.x), i32(GlobalInvocationID.y));
 
-    let horizontal_coefficient: f32 = (f32(screen_pos.x) - f32(screen_size.x) / 2) / f32(screen_size.x);
-    let vertical_coefficient: f32 = (f32(screen_pos.y) - f32(screen_size.y) / 2) / f32(screen_size.x);
+    //let horizontal_coefficient: f32 = (f32(screen_pos.x) - f32(screen_size.x) / 2) / f32(screen_size.x);
+    //let vertical_coefficient: f32 = (f32(screen_pos.y) - f32(screen_size.y) / 2) / f32(screen_size.x);
 
     let forwards: vec3<f32> = scene.cameraForwards;
     let right: vec3<f32> = scene.cameraRight;
     let up: vec3<f32> = scene.cameraUp;
 
     var myRay: Ray;
-    myRay.direction = normalize(forwards + horizontal_coefficient * right + vertical_coefficient * up);
-    myRay.origin = scene.cameraPos;
+    //myRay.direction = normalize(forwards + horizontal_coefficient * right + vertical_coefficient * up);
+    //myRay.origin = scene.cameraPos;
+    myRay.direction = normalize(forwards);
+    myRay.origin = scene.cameraPos +
+        right * f32(2 * screen_pos.x - i32(screen_size.x)) * 0.01 -
+        up * f32(2 * screen_pos.y - i32(screen_size.y)) * 0.01;
 
     let pixel_color : vec3<f32> = rayColor(myRay);
 

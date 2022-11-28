@@ -34,7 +34,7 @@ struct RenderState {
 @compute @workgroup_size(1,1,1)
 fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
 
-    let screen_size: vec2<u32> = textureDimensions(color_buffer);
+    //let screen_size: vec2<i32> = vec2<i32>(i32(textureDimensions(color_buffer).x), i32(textureDimensions(color_buffer).y));
     let screen_pos : vec2<i32> = vec2<i32>(i32(GlobalInvocationID.x), i32(GlobalInvocationID.y));
 
     //let horizontal_coefficient: f32 = (f32(screen_pos.x) - f32(screen_size.x) / 2) / f32(screen_size.x);
@@ -49,8 +49,8 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
     //myRay.origin = scene.cameraPos;
     myRay.direction = normalize(forwards);
     myRay.origin = scene.cameraPos +
-        right * f32(2 * screen_pos.x - i32(screen_size.x)) * 0.01 -
-        up * f32(2 * screen_pos.y - i32(screen_size.y)) * 0.01;
+        right * f32(2 * screen_pos.x - i32(textureDimensions(color_buffer).x)) * 0.01 -
+        up * f32(2 * screen_pos.y - i32(textureDimensions(color_buffer).y)) * 0.01;
 
     let pixel_color : vec3<f32> = rayColor(myRay);
 

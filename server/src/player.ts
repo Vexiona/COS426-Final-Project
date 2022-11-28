@@ -51,9 +51,13 @@ export class Player
         return true;
     }
 
-    send(data: any)
+    send(data: any): boolean
     {
         if(this.validate())
+        {
             this.ws.send(data);
+            return true;
+        }
+        return false;
     }
 }

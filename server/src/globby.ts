@@ -9,9 +9,12 @@ export class GameLobby
     public static ACTIVE: GameState = 1;
     public static PAUSED: GameState = 2;
 
-    private state: GameState;
-    private players: Player[];
+    public static INACTIVE_TIME: number = 10000; //in milliseconds
 
+    private state: GameState;
+    private lastActive: number;
+
+    private players: Player[];
     private game: Game;
 
     constructor(people: Player[])
@@ -22,6 +25,8 @@ export class GameLobby
         this.game = new Game(this.players);
         for(let i = 0; i < people.length; i++)
             people[i].send(JSON.stringify({ message: "Player " + i }));
+
+        this.lastActive = performance.now();
     }
 
     getState(): GameState
@@ -36,16 +41,24 @@ export class GameLobby
         if(this.players[pno].validate())
             return false;
         this.players[pno] = player;
-        player.send("Player " + pno);
+        player.send(JSON.stringify({ message: "Player " + pno }));
+        this.lastActive = performance.now();
         return true;
     }
 
     gameTick(): void
     {
+        let foundActive: boolean = false;
         const renderData: string = JSON.stringify(this.game.physics());
         for(let i = 0; i < this.players.length; i++)
         {
-            this.players[i].send(renderData);
+            if(this.players[i].send(renderData))
+                foundActive = true;
         }
+        let time = performance.now();
+        if(!foundActive && time - this.lastActive >= GameLobby.INACTIVE_TIME)
+            this.state = GameLobby.DEAD;
+        else if(foundActive)
+            this.lastActive = performance.now();
     }
 }

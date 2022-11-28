@@ -13,8 +13,17 @@ export class AuthCookie
 
     getAuth(cookie: string | undefined): string | null
     {
+        console.log(cookie);
         if(cookie === undefined) return null;
-        const userId = CookieSigner.unsign(Cookie.parse(cookie).auth, this.secret);
+        let userId;
+        try
+        {
+            userId = CookieSigner.unsign(Cookie.parse(cookie).auth, this.secret);
+        }
+        catch
+        {
+            return null;
+        }
         if(userId === false) return null;
         return userId;
     }

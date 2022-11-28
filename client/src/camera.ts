@@ -31,6 +31,5 @@ export class Camera {
         vec3.cross(this.right, this.forwards, [0.0, 0.0, 1.0]);
         this.up = new Float32Array([0.0, 0.0, 0.0]);
         vec3.cross(this.up, this.right, this.forwards);
-        console.log(this.forwards, this.right, this.up);
     }
 }

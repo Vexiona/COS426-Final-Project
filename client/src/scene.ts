@@ -8,16 +8,16 @@ export class Scene {
 
     constructor() {
 
-        this.spheres = new Array(32);
+        this.spheres = new Array(2);
         for (let i = 0; i < this.spheres.length; i++) {
 
             const center: number[] = [
-                3.0 + 7.0 * Math.random(),
-                -5.0 + 10.0 * Math.random(),
-                -5.0 + 10.0 * Math.random()
+                0.0,
+                0.0,
+                0.0
             ];
 
-            const radius: number = 0.1 + 1.9 * Math.random();
+            const radius: number = 1.0;
 
             const color: number[] = [
                 0.3 + 0.7 * Math.random(),
@@ -28,6 +28,6 @@ export class Scene {
             this.spheres[i] = new Sphere(center, radius,color);
         }
 
-        this.camera = new Camera([-20.0, 0.0, 0.0]);
+        this.camera = new Camera([0.0, -2.0, 0.0]);
     }
 }

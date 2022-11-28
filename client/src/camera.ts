@@ -11,8 +11,8 @@ export class Camera {
 
     constructor(position: number[]) {
         this.position = new Float32Array(position);
-        this.theta = 0.0;
-        this.phi = 0.0;
+        this.theta = 90.0;
+        this.phi = 90.0;
 
         this.recalculate_vectors();
     }
@@ -21,9 +21,9 @@ export class Camera {
         
         this.forwards = new Float32Array(
             [
-                Math.cos(this.theta * 180.0 / Math.PI) * Math.cos(this.phi * 180.0 / Math.PI),
-                Math.sin(this.theta * 180.0 / Math.PI) * Math.cos(this.phi * 180.0 / Math.PI),
-                Math.sin(this.phi * 180.0 / Math.PI)
+                Math.cos(this.theta * Math.PI / 180.0) * Math.sin(this.phi * Math.PI / 180.0),
+                Math.sin(this.theta * Math.PI / 180.0) * Math.sin(this.phi * Math.PI / 180.0),
+                Math.cos(this.phi * Math.PI / 180.0)
             ]
         );
         

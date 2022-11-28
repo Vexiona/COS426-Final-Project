@@ -31,8 +31,8 @@ export class Renderer
     async Initialize()
     {
         await this.setupDevice();
-        await this.createAssets();
-        await this.makePipeline();
+        this.createAssets();
+        this.makePipeline();
         this.render();
     }
 

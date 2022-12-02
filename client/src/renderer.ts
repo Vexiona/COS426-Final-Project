@@ -1,4 +1,4 @@
-import raytracer_kernel from "./shaders/raytracer_kernel.wgsl";
+import raytracer_kernel from "./shaders/raytracer.wgsl";
 import screen_shader from "./shaders/screen_shader.wgsl";
 import { Scene } from "./scene";
 
@@ -14,8 +14,11 @@ export class Renderer
     color_buffer!: GPUTexture;
     color_buffer_view!: GPUTextureView;
     sampler!: GPUSampler;
-    sceneParameters!: GPUBuffer;
-    sphereBuffer!: GPUBuffer;
+
+    bufferCamera!: GPUBuffer;
+    bufferScene!: GPUBuffer;
+    bufferLights!: GPUBuffer;
+    bufferObjects!: GPUBuffer;
 
     ray_tracing_pipeline!: GPUComputePipeline;
     ray_tracing_bind_group!: GPUBindGroup;
@@ -33,6 +36,7 @@ export class Renderer
         await this.setupDevice();
         this.createAssets();
         this.makePipeline();
+        this.prepareScene();
         this.render();
     }
 
@@ -53,6 +57,56 @@ export class Renderer
             alphaMode: "opaque"
         });
 
+    }
+
+    async createAssets()
+    {
+        //compute output texture
+        this.color_buffer = this.device.createTexture(
+            {
+                size: {
+                    width: this.canvas.width,
+                    height: this.canvas.height,
+                },
+                format: "rgba8unorm",
+                usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
+            }
+        );
+
+        this.color_buffer_view = this.color_buffer.createView();
+
+        this.sampler = this.device.createSampler({
+            addressModeU: "repeat",
+            addressModeV: "repeat",
+            magFilter: "linear",
+            minFilter: "nearest",
+            mipmapFilter: "nearest",
+            maxAnisotropy: 1
+        });
+
+        //camera parameters
+        this.bufferCamera = this.device.createBuffer({
+            size: 64,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+
+        //scene parameters
+        this.bufferScene = this.device.createBuffer({
+            size: 16,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        });
+
+        //scene lights
+        this.bufferLights = this.device.createBuffer({
+            size: 32 * this.scene.spheres.length,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        });
+
+        //scene objects
+        this.bufferObjects = this.device.createBuffer({
+            size: 32 * this.scene.spheres.length,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        });
     }
 
     async makePipeline()
@@ -82,9 +136,24 @@ export class Renderer
                         type: "read-only-storage",
                         hasDynamicOffset: false
                     }
+                },
+                {
+                    binding: 3,
+                    visibility: GPUShaderStage.COMPUTE,
+                    buffer: {
+                        type: "read-only-storage",
+                        hasDynamicOffset: false
+                    }
+                },
+                {
+                    binding: 4,
+                    visibility: GPUShaderStage.COMPUTE,
+                    buffer: {
+                        type: "read-only-storage",
+                        hasDynamicOffset: false
+                    }
                 }
             ]
-
         });
 
         this.ray_tracing_bind_group = this.device.createBindGroup({
@@ -97,13 +166,25 @@ export class Renderer
                 {
                     binding: 1,
                     resource: {
-                        buffer: this.sceneParameters,
+                        buffer: this.bufferCamera,
                     }
                 },
                 {
                     binding: 2,
                     resource: {
-                        buffer: this.sphereBuffer,
+                        buffer: this.bufferScene,
+                    }
+                },
+                {
+                    binding: 3,
+                    resource: {
+                        buffer: this.bufferLights,
+                    }
+                },
+                {
+                    binding: 4,
+                    resource: {
+                        buffer: this.bufferObjects,
                     }
                 }
             ]
@@ -187,100 +268,59 @@ export class Renderer
 
     }
 
-    async createAssets()
-    {
-        this.color_buffer = this.device.createTexture(
-            {
-                size: {
-                    width: this.canvas.width,
-                    height: this.canvas.height,
-                },
-                format: "rgba8unorm",
-                usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
-            }
-        );
-
-        this.color_buffer_view = this.color_buffer.createView();
-
-        const samplerDescriptor: GPUSamplerDescriptor = {
-            addressModeU: "repeat",
-            addressModeV: "repeat",
-            magFilter: "linear",
-            minFilter: "nearest",
-            mipmapFilter: "nearest",
-            maxAnisotropy: 1
-        };
-        this.sampler = this.device.createSampler(samplerDescriptor);
-
-        const parameterBufferDescriptor: GPUBufferDescriptor = {
-            size: 64,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-        };
-        this.sceneParameters = this.device.createBuffer(
-            parameterBufferDescriptor
-        );
-
-        const sphereBufferDescriptor: GPUBufferDescriptor = {
-            size: 32 * this.scene.spheres.length,
-            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-        };
-        this.sphereBuffer = this.device.createBuffer(
-            sphereBufferDescriptor
-        );
-    }
-
     prepareScene()
     {
-        const sceneData = {
-            cameraPos: this.scene.camera.position,
-            cameraForwards: this.scene.camera.forwards,
-            cameraRight: this.scene.camera.right,
-            cameraUp: this.scene.camera.up,
-            sphereCount: this.scene.spheres.length,
-        };
-        this.device.queue.writeBuffer(
-            this.sceneParameters, 0,
-            new Float32Array(
-                [
-                    sceneData.cameraPos[0],
-                    sceneData.cameraPos[1],
-                    sceneData.cameraPos[2],
-                    0.0,
-                    sceneData.cameraForwards[0],
-                    sceneData.cameraForwards[1],
-                    sceneData.cameraForwards[2],
-                    0.0,
-                    sceneData.cameraRight[0],
-                    sceneData.cameraRight[1],
-                    sceneData.cameraRight[2],
-                    0.0,
-                    sceneData.cameraUp[0],
-                    sceneData.cameraUp[1],
-                    sceneData.cameraUp[2],
-                    sceneData.sphereCount
-                ]
-            ), 0, 16
-        );
+        const sceneData: Int32Array = new Int32Array(4);
+        sceneData[0] = this.canvas.width;
+        sceneData[1] = this.canvas.height;
+        sceneData[2] = 0;
+        sceneData[3] = this.scene.spheres.length;
+        this.device.queue.writeBuffer(this.bufferScene, 0, sceneData, 0, 4);
 
-        const sphereData: Float32Array = new Float32Array(8 * this.scene.spheres.length);
+        const objectData: Float32Array = new Float32Array(8 * this.scene.spheres.length);
         for(let i = 0; i < this.scene.spheres.length; i++)
         {
-            sphereData[8 * i] = this.scene.spheres[i].center[0];
-            sphereData[8 * i + 1] = this.scene.spheres[i].center[1];
-            sphereData[8 * i + 2] = this.scene.spheres[i].center[2];
-            sphereData[8 * i + 3] = 0.0;
-            sphereData[8 * i + 4] = this.scene.spheres[i].color[0];
-            sphereData[8 * i + 5] = this.scene.spheres[i].color[1];
-            sphereData[8 * i + 6] = this.scene.spheres[i].color[2];
-            sphereData[8 * i + 7] = this.scene.spheres[i].radius;
+            objectData[8 * i] = this.scene.spheres[i].center[0];
+            objectData[8 * i + 1] = this.scene.spheres[i].center[1];
+            objectData[8 * i + 2] = this.scene.spheres[i].center[2];
+            objectData[8 * i + 3] = 0.0;
+            objectData[8 * i + 4] = this.scene.spheres[i].color[0];
+            objectData[8 * i + 5] = this.scene.spheres[i].color[1];
+            objectData[8 * i + 6] = this.scene.spheres[i].color[2];
+            objectData[8 * i + 7] = this.scene.spheres[i].radius;
         }
+        this.device.queue.writeBuffer(this.bufferObjects, 0, objectData, 0, 8 * this.scene.spheres.length);
+    }
 
-        this.device.queue.writeBuffer(this.sphereBuffer, 0, sphereData, 0, 8 * this.scene.spheres.length);
+    updateCamera()
+    {
+        const camera = this.scene.camera;
+        this.device.queue.writeBuffer(
+            this.bufferCamera, 0, new Float32Array([
+                camera.position[0],
+                camera.position[1],
+                camera.position[2],
+                0.0,
+                camera.forward[0],
+                camera.forward[1],
+                camera.forward[2],
+                0.0,
+                camera.right[0],
+                camera.right[1],
+                camera.right[2],
+                0.0,
+                camera.up[0],
+                camera.up[1],
+                camera.up[2],
+                camera.fov
+            ]), 0, 16
+        );
     }
 
     render = () =>
     {
         this.prepareScene();
+        this.updateCamera();
 
         const commandEncoder: GPUCommandEncoder = this.device.createCommandEncoder();
 

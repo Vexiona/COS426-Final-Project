@@ -28,6 +28,6 @@ export class Scene {
             this.spheres[i] = new Sphere(center, radius,color);
         }
 
-        this.camera = new Camera([0.0, -2.0, 0.0]);
+        this.camera = new Camera([0.0, -10.0, 0.0]);
     }
 }

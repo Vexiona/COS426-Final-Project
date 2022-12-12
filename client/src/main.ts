@@ -49,9 +49,9 @@ function connect(value: Response)
         else if(renderData.message === 'renderData')
         {
             scene.spheres[0].center[0] = renderData.player1!.x;
-            scene.spheres[0].center[2] = renderData.player1!.y;
+            scene.spheres[0].center[1] = renderData.player1!.y;
             scene.spheres[1].center[0] = renderData.player2!.x;
-            scene.spheres[1].center[2] = renderData.player2!.y;
+            scene.spheres[1].center[1] = renderData.player2!.y;
         }
     });
     ws.addEventListener('error', function(event)

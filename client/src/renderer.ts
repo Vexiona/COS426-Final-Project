@@ -16,9 +16,10 @@ export class Renderer
     sampler!: GPUSampler;
 
     bufferCamera!: GPUBuffer;
+    bufferDynamicObjects!: GPUBuffer;
     bufferScene!: GPUBuffer;
     bufferLights!: GPUBuffer;
-    bufferObjects!: GPUBuffer;
+    bufferStaticObjects!: GPUBuffer;
 
     ray_tracing_pipeline!: GPUComputePipeline;
     ray_tracing_bind_group!: GPUBindGroup;
@@ -59,7 +60,7 @@ export class Renderer
 
     }
 
-    async createAssets()
+    private createAssets()
     {
         //compute output texture
         this.color_buffer = this.device.createTexture(
@@ -90,6 +91,12 @@ export class Renderer
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
 
+        //dynamic objects
+        this.bufferDynamicObjects = this.device.createBuffer({
+            size: 64,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+
         //scene parameters
         this.bufferScene = this.device.createBuffer({
             size: 16,
@@ -102,14 +109,14 @@ export class Renderer
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         });
 
-        //scene objects
-        this.bufferObjects = this.device.createBuffer({
+        //static objects
+        this.bufferStaticObjects = this.device.createBuffer({
             size: 32 * this.scene.spheres.length,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         });
     }
 
-    async makePipeline()
+    private makePipeline()
     {
         const ray_tracing_bind_group_layout = this.device.createBindGroupLayout({
             entries: [
@@ -133,8 +140,7 @@ export class Renderer
                     binding: 2,
                     visibility: GPUShaderStage.COMPUTE,
                     buffer: {
-                        type: "read-only-storage",
-                        hasDynamicOffset: false
+                        type: "uniform",
                     }
                 },
                 {
@@ -147,6 +153,14 @@ export class Renderer
                 },
                 {
                     binding: 4,
+                    visibility: GPUShaderStage.COMPUTE,
+                    buffer: {
+                        type: "read-only-storage",
+                        hasDynamicOffset: false
+                    }
+                },
+                {
+                    binding: 5,
                     visibility: GPUShaderStage.COMPUTE,
                     buffer: {
                         type: "read-only-storage",
@@ -172,19 +186,25 @@ export class Renderer
                 {
                     binding: 2,
                     resource: {
-                        buffer: this.bufferScene,
+                        buffer: this.bufferDynamicObjects,
                     }
                 },
                 {
                     binding: 3,
                     resource: {
-                        buffer: this.bufferLights,
+                        buffer: this.bufferScene,
                     }
                 },
                 {
                     binding: 4,
                     resource: {
-                        buffer: this.bufferObjects,
+                        buffer: this.bufferLights,
+                    }
+                },
+                {
+                    binding: 5,
+                    resource: {
+                        buffer: this.bufferStaticObjects,
                     }
                 }
             ]
@@ -268,7 +288,7 @@ export class Renderer
 
     }
 
-    prepareScene()
+    private prepareScene()
     {
         const sceneData: Int32Array = new Int32Array(4);
         sceneData[0] = this.canvas.width;
@@ -278,21 +298,19 @@ export class Renderer
         this.device.queue.writeBuffer(this.bufferScene, 0, sceneData, 0, 4);
 
         const objectData: Float32Array = new Float32Array(8 * this.scene.spheres.length);
-        for(let i = 0; i < this.scene.spheres.length; i++)
-        {
-            objectData[8 * i] = this.scene.spheres[i].center[0];
-            objectData[8 * i + 1] = this.scene.spheres[i].center[1];
-            objectData[8 * i + 2] = this.scene.spheres[i].center[2];
-            objectData[8 * i + 3] = 0.0;
-            objectData[8 * i + 4] = this.scene.spheres[i].color[0];
-            objectData[8 * i + 5] = this.scene.spheres[i].color[1];
-            objectData[8 * i + 6] = this.scene.spheres[i].color[2];
-            objectData[8 * i + 7] = this.scene.spheres[i].radius;
-        }
-        this.device.queue.writeBuffer(this.bufferObjects, 0, objectData, 0, 8 * this.scene.spheres.length);
+        objectData[0] = 0.0; //n.x
+        objectData[1] = 0.0; //n.y
+        objectData[2] = 1.0; //n.z
+        objectData[3] = -1.0; //dist
+        objectData[4] = 0.5; //r
+        objectData[5] = 0.0; //g
+        objectData[6] = 0.0; //b
+        objectData[7] = 0.0;
+
+        this.device.queue.writeBuffer(this.bufferStaticObjects, 0, objectData, 0, 8);
     }
 
-    updateCamera()
+    private updateCamera()
     {
         const camera = this.scene.camera;
         this.device.queue.writeBuffer(
@@ -317,10 +335,27 @@ export class Renderer
         );
     }
 
+    private updateDynamic()
+    {
+        const objectData: Float32Array = new Float32Array(16);
+        for(let i = 0; i < 2; i++)
+        {
+            objectData[8 * i] = this.scene.spheres[i].center[0];
+            objectData[8 * i + 1] = this.scene.spheres[i].center[1];
+            objectData[8 * i + 2] = this.scene.spheres[i].center[2];
+            objectData[8 * i + 3] = this.scene.spheres[i].radius;
+            objectData[8 * i + 4] = this.scene.spheres[i].color[0];
+            objectData[8 * i + 5] = this.scene.spheres[i].color[1];
+            objectData[8 * i + 6] = this.scene.spheres[i].color[2];
+            objectData[8 * i + 7] = 0.0;
+        }
+        this.device.queue.writeBuffer(this.bufferDynamicObjects, 0, objectData, 0, 16);
+    }
+
     render = () =>
     {
-        this.prepareScene();
         this.updateCamera();
+        this.updateDynamic();
 
         const commandEncoder: GPUCommandEncoder = this.device.createCommandEncoder();
 

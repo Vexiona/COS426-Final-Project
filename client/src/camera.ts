@@ -14,7 +14,7 @@ export class Camera
     {
         this.position = new Float32Array(position);
         this.theta = 90.0;
-        this.phi = 90.0;
+        this.phi = 135.0;
         this.fov = 1.0;
 
         this.recalculate_vectors();

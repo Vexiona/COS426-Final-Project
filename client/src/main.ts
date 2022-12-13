@@ -10,7 +10,7 @@ var context: GPUCanvasContext;
 var pno: any = undefined;
 var scene: Scene2d | Scene3d;
 
-function connect(value: Response)
+function connect()
 {
     const ws = new WebSocket('wss://' + window.location.host);
     ws.addEventListener('open', function(event)
@@ -53,10 +53,7 @@ function connect(value: Response)
         }
         else if(renderData.message === 'renderData')
         {
-            scene.spheres[0].center[0] = renderData.player1!.x;
-            scene.spheres[0].center[1] = renderData.player1!.y;
-            scene.spheres[1].center[0] = renderData.player2!.x;
-            scene.spheres[1].center[1] = renderData.player2!.y;
+            scene.set(renderData);
         }
     });
     ws.addEventListener('error', function(event)
@@ -87,10 +84,10 @@ async function initialize(canvas: HTMLCanvasElement)
     });
 }
 
-function login()
+async function login()
 {
-    fetch('/login', { method: 'POST', credentials: 'same-origin' })
-        .then(connect);
+    await fetch('/login', { method: 'POST', credentials: 'same-origin' });
+    connect();
 }
 
 async function main()
@@ -124,9 +121,9 @@ async function main()
 
     const renderer = new Renderer2d(device, context, scene);
 
-    renderer.initialize();
+    await renderer.initialize();
+    await login();
     renderer.render();
-    login();
 }
 
 window.onload = main;

@@ -2,6 +2,8 @@ import rasterizer_kernel from "./shaders/rasterizer.wgsl";
 import screen_shader from "./shaders/screen_shader.wgsl";
 import { Scene } from "./scene";
 
+import tex_font_url from '../../media/game_font.png';
+
 export class Renderer
 {
     scene: Scene;
@@ -14,7 +16,12 @@ export class Renderer
 
     color_buffer!: GPUTexture;
     color_buffer_view!: GPUTextureView;
-    sampler!: GPUSampler;
+    screen_sampler!: GPUSampler;
+
+    tex_loaded: number = 0;
+    tex_total: number = 1;
+    tex_font!: GPUTexture;
+    tex_font_view!: GPUTextureView;
 
     bufferCamera!: GPUBuffer;
     bufferDynamicObjects!: GPUBuffer;
@@ -24,6 +31,8 @@ export class Renderer
 
     ray_tracing_pipeline!: GPUComputePipeline;
     ray_tracing_bind_group!: GPUBindGroup;
+    tex_bind_group!: GPUBindGroup;
+
     screen_pipeline!: GPURenderPipeline;
     screen_bind_group!: GPUBindGroup;
 
@@ -36,9 +45,10 @@ export class Renderer
         this.scene = scene;
     }
 
-    initialize()
+    async initialize()
     {
         this.createAssets();
+        await this.loadAssets();
         this.makePipeline();
         this.prepareScene();
     }
@@ -56,10 +66,9 @@ export class Renderer
                 usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
             }
         );
-
         this.color_buffer_view = this.color_buffer.createView();
 
-        this.sampler = this.device.createSampler({
+        this.screen_sampler = this.device.createSampler({
             addressModeU: "repeat",
             addressModeV: "repeat",
             magFilter: "linear",
@@ -70,7 +79,7 @@ export class Renderer
 
         //camera parameters
         this.bufferCamera = this.device.createBuffer({
-            size: 64,
+            size: 16,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
 
@@ -88,15 +97,44 @@ export class Renderer
 
         //scene lights
         this.bufferLights = this.device.createBuffer({
-            size: 32 * this.scene.spheres.length,
+            size: 32 * this.scene.characters.length,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         });
 
         //static objects
         this.bufferStaticObjects = this.device.createBuffer({
-            size: 32 * this.scene.spheres.length,
+            size: 32 * this.scene.characters.length,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         });
+    }
+
+    private webGPUTextureFromImageBitmapOrCanvas(source: ImageBitmap)
+    {
+        const textureDescriptor: GPUTextureDescriptor = {
+            size: { width: source.width, height: source.height },
+            format: 'rgba8unorm',
+            usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT
+        };
+        const texture = this.device.createTexture(textureDescriptor);
+
+        this.device.queue.copyExternalImageToTexture({ source }, { texture }, textureDescriptor.size);
+
+        return texture;
+    }
+
+    private async webGPUTextureFromImageUrl(url: string)
+    {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const imgBitmap = await createImageBitmap(blob);
+
+        return this.webGPUTextureFromImageBitmapOrCanvas(imgBitmap);
+    }
+
+    private async loadAssets()
+    {
+        this.tex_font = await this.webGPUTextureFromImageUrl(tex_font_url);
+        this.tex_font_view = this.tex_font.createView();
     }
 
     private makePipeline()
@@ -193,8 +231,40 @@ export class Renderer
             ]
         });
 
+        const tex_bind_group_layout = this.device.createBindGroupLayout({
+            entries: [
+                {
+                    binding: 0,
+                    visibility: GPUShaderStage.COMPUTE,
+                    sampler: {}
+                },
+                {
+                    binding: 1,
+                    visibility: GPUShaderStage.COMPUTE,
+                    texture: {}
+                }
+            ]
+        });
+
+        this.tex_bind_group = this.device.createBindGroup({
+            layout: tex_bind_group_layout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: this.screen_sampler
+                },
+                {
+                    binding: 1,
+                    resource: this.tex_font_view
+                },
+            ]
+        });
+
         const ray_tracing_pipeline_layout = this.device.createPipelineLayout({
-            bindGroupLayouts: [ray_tracing_bind_group_layout]
+            bindGroupLayouts: [
+                ray_tracing_bind_group_layout,
+                tex_bind_group_layout
+            ]
         });
 
         this.ray_tracing_pipeline = this.device.createComputePipeline({
@@ -229,7 +299,7 @@ export class Renderer
             entries: [
                 {
                     binding: 0,
-                    resource: this.sampler
+                    resource: this.screen_sampler
                 },
                 {
                     binding: 1,
@@ -276,11 +346,11 @@ export class Renderer
         const sceneData: Int32Array = new Int32Array(4);
         sceneData[0] = this.width;
         sceneData[1] = this.height;
-        sceneData[2] = 0;
-        sceneData[3] = this.scene.spheres.length;
+        sceneData[2] = this.scene.characters.length; //dynamic
+        sceneData[3] = 0; //static
         this.device.queue.writeBuffer(this.bufferScene, 0, sceneData, 0, 4);
 
-        const objectData: Float32Array = new Float32Array(8 * this.scene.spheres.length);
+        const objectData: Float32Array = new Float32Array(8 * this.scene.characters.length);
         objectData[0] = 0.0; //n.x
         objectData[1] = 0.0; //n.y
         objectData[2] = 1.0; //n.z
@@ -301,20 +371,8 @@ export class Renderer
                 camera.position[0],
                 camera.position[1],
                 camera.position[2],
-                0.0,
-                camera.forward[0],
-                camera.forward[1],
-                camera.forward[2],
-                0.0,
-                camera.right[0],
-                camera.right[1],
-                camera.right[2],
-                0.0,
-                camera.up[0],
-                camera.up[1],
-                camera.up[2],
                 camera.fov
-            ]), 0, 16
+            ]), 0, 4
         );
     }
 
@@ -323,13 +381,13 @@ export class Renderer
         const objectData: Float32Array = new Float32Array(16);
         for(let i = 0; i < 2; i++)
         {
-            objectData[8 * i] = this.scene.spheres[i].center[0];
-            objectData[8 * i + 1] = this.scene.spheres[i].center[1];
-            objectData[8 * i + 2] = this.scene.spheres[i].center[2];
-            objectData[8 * i + 3] = this.scene.spheres[i].radius;
-            objectData[8 * i + 4] = this.scene.spheres[i].color[0];
-            objectData[8 * i + 5] = this.scene.spheres[i].color[1];
-            objectData[8 * i + 6] = this.scene.spheres[i].color[2];
+            objectData[8 * i] = this.scene.characters[i].position[0];
+            objectData[8 * i + 1] = this.scene.characters[i].position[1];
+            objectData[8 * i + 2] = this.scene.characters[i].position[2];
+            objectData[8 * i + 3] = 0.0;
+            objectData[8 * i + 4] = this.scene.characters[i].color[0];
+            objectData[8 * i + 5] = this.scene.characters[i].color[1];
+            objectData[8 * i + 6] = this.scene.characters[i].color[2];
             objectData[8 * i + 7] = 0.0;
         }
         this.device.queue.writeBuffer(this.bufferDynamicObjects, 0, objectData, 0, 16);
@@ -345,6 +403,7 @@ export class Renderer
         const ray_trace_pass: GPUComputePassEncoder = commandEncoder.beginComputePass();
         ray_trace_pass.setPipeline(this.ray_tracing_pipeline);
         ray_trace_pass.setBindGroup(0, this.ray_tracing_bind_group);
+        ray_trace_pass.setBindGroup(1, this.tex_bind_group);
         ray_trace_pass.dispatchWorkgroups(this.width, this.height, 1);
         ray_trace_pass.end();
 

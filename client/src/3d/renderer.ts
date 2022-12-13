@@ -88,13 +88,13 @@ export class Renderer
 
         //scene lights
         this.bufferLights = this.device.createBuffer({
-            size: 32 * this.scene.spheres.length,
+            size: 32 * this.scene.characters.length,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         });
 
         //static objects
         this.bufferStaticObjects = this.device.createBuffer({
-            size: 32 * this.scene.spheres.length,
+            size: 32 * this.scene.characters.length,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         });
     }
@@ -277,10 +277,10 @@ export class Renderer
         sceneData[0] = this.width;
         sceneData[1] = this.height;
         sceneData[2] = 0;
-        sceneData[3] = this.scene.spheres.length;
+        sceneData[3] = this.scene.characters.length;
         this.device.queue.writeBuffer(this.bufferScene, 0, sceneData, 0, 4);
 
-        const objectData: Float32Array = new Float32Array(8 * this.scene.spheres.length);
+        const objectData: Float32Array = new Float32Array(8 * this.scene.characters.length);
         objectData[0] = 0.0; //n.x
         objectData[1] = 0.0; //n.y
         objectData[2] = 1.0; //n.z
@@ -323,13 +323,13 @@ export class Renderer
         const objectData: Float32Array = new Float32Array(16);
         for(let i = 0; i < 2; i++)
         {
-            objectData[8 * i] = this.scene.spheres[i].center[0];
-            objectData[8 * i + 1] = this.scene.spheres[i].center[1];
-            objectData[8 * i + 2] = this.scene.spheres[i].center[2];
-            objectData[8 * i + 3] = this.scene.spheres[i].radius;
-            objectData[8 * i + 4] = this.scene.spheres[i].color[0];
-            objectData[8 * i + 5] = this.scene.spheres[i].color[1];
-            objectData[8 * i + 6] = this.scene.spheres[i].color[2];
+            objectData[8 * i] = this.scene.characters[i].position[0];
+            objectData[8 * i + 1] = this.scene.characters[i].position[1];
+            objectData[8 * i + 2] = this.scene.characters[i].position[2];
+            objectData[8 * i + 3] = this.scene.characters[i].radius;
+            objectData[8 * i + 4] = this.scene.characters[i].color[0];
+            objectData[8 * i + 5] = this.scene.characters[i].color[1];
+            objectData[8 * i + 6] = this.scene.characters[i].color[2];
             objectData[8 * i + 7] = 0.0;
         }
         this.device.queue.writeBuffer(this.bufferDynamicObjects, 0, objectData, 0, 16);

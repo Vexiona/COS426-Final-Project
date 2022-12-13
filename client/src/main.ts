@@ -1,9 +1,14 @@
 import './style.css';
-import { Scene } from "./scene.js";
-import { Renderer } from './renderer.js';
+import { Scene as Scene2d } from './2d/scene.js';
+import { Renderer as Renderer2d } from './2d/renderer.js';
+import { Scene as Scene3d } from './3d/scene.js';
+import { Renderer as Renderer3d } from './3d/renderer.js';
+
+var device: GPUDevice;
+var context: GPUCanvasContext;
 
 var pno: any = undefined;
-var scene: Scene;
+var scene: Scene2d | Scene3d;
 
 function connect(value: Response)
 {
@@ -64,13 +69,31 @@ function connect(value: Response)
     });
 }
 
+async function initialize(canvas: HTMLCanvasElement)
+{
+    if(!('gpu' in navigator))
+        throw 'No webGPU!';
+    const adapter: GPUAdapter = <GPUAdapter>await navigator.gpu?.requestAdapter();
+    if(adapter === null)
+        throw 'No adapter!';
+    device = <GPUDevice>await adapter?.requestDevice();
+    console.log(device);
+
+    context = <GPUCanvasContext>canvas.getContext("webgpu");
+    context.configure({
+        device: device,
+        format: "bgra8unorm",
+        alphaMode: "opaque"
+    });
+}
+
 function login()
 {
     fetch('/login', { method: 'POST', credentials: 'same-origin' })
         .then(connect);
 }
 
-function main()
+async function main()
 {
     var meta = document.createElement('meta');
     meta.httpEquiv = "origin-trial";
@@ -78,33 +101,32 @@ function main()
     document.getElementsByTagName('head')[0].appendChild(meta);
     
     const canvasDiv = document.createElement('div');
-    const canvas3d = document.createElement('canvas');
-    canvas3d.id = 'game-window';
-    canvas3d.width = 1920;
-    canvas3d.height = 1080;
-    const canvas2d = document.createElement('canvas');
-    canvas2d.width = 1920;
-    canvas2d.height = 1080;
-    canvasDiv.appendChild(canvas3d);
-    canvasDiv.appendChild(canvas2d);
+    const canvas = document.createElement('canvas');
+    canvas.id = 'game-window';
+    canvas.width = 1920;
+    canvas.height = 1080;
+    //const canvas2d = document.createElement('canvas');
+    //canvas2d.width = 1920;
+    //canvas2d.height = 1080;
+    canvasDiv.appendChild(canvas);
+    //canvasDiv.appendChild(canvas2d);
     document.body.appendChild(canvasDiv);
 
-    const canvas2dctx = canvas2d.getContext("2d");
+    /*const canvas2dctx = canvas2d.getContext("2d");
     if(canvas2dctx === null) return;
     canvas2dctx.font = "bold 48px serif";
     canvas2dctx.fillStyle = "blue";
-    canvas2dctx.fillText("Hello World!", 10, 10);
+    canvas2dctx.fillText("Hello World!", 10, 10);*/
 
+    await initialize(canvas);
 
-    scene = new Scene();
+    scene = new Scene2d();
 
-    const renderer = new Renderer(canvas3d, scene);
+    const renderer = new Renderer2d(device, context, scene);
 
-    renderer.Initialize()
-        .then(() =>
-        {
-            login();
-        });
+    renderer.initialize();
+    renderer.render();
+    login();
 }
 
 window.onload = main;

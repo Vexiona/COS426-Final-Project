@@ -27,6 +27,7 @@ export class Camera
             Math.sin(this.theta * Math.PI / 180.0) * Math.sin(this.phi * Math.PI / 180.0),
             Math.cos(this.phi * Math.PI / 180.0)
         ]);
+        console.log(this.forward);
 
         this.right = new Float32Array([0.0, 0.0, 0.0]);
         vec3.cross(this.right, this.forward, [0.0, 0.0, 1.0]);

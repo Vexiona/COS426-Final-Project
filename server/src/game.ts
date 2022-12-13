@@ -12,7 +12,7 @@ export class Game
         this.players = players;
         this.characters = [];
         for(let i = 0; i < this.players.length; i++)
-            this.characters[i] = { x: 0, y: 0 };
+            this.characters[i] = { x: 0, y: 0, z:0 };
         this.lastPhyUpdate = performance.now();
     }
 

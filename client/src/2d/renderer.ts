@@ -1,15 +1,16 @@
-import raytracer_kernel from "./shaders/raytracer.wgsl";
+import rasterizer_kernel from "./shaders/resterizer.wgsl";
 import screen_shader from "./shaders/screen_shader.wgsl";
 import { Scene } from "./scene";
 
 export class Renderer
 {
-    canvas: HTMLCanvasElement;
-
     scene: Scene;
 
-    device!: GPUDevice;
-    context!: GPUCanvasContext;
+    device: GPUDevice;
+    context: GPUCanvasContext;
+
+    width: number;
+    height: number;
 
     color_buffer!: GPUTexture;
     color_buffer_view!: GPUTextureView;
@@ -26,38 +27,20 @@ export class Renderer
     screen_pipeline!: GPURenderPipeline;
     screen_bind_group!: GPUBindGroup;
 
-    constructor(canvas: HTMLCanvasElement, scene: Scene)
+    constructor(device: GPUDevice, context: GPUCanvasContext, scene: Scene)
     {
-        this.canvas = canvas;
+        this.device = device;
+        this.context = context;
+        this.width = (<HTMLCanvasElement>context.canvas).width;
+        this.height = (<HTMLCanvasElement>context.canvas).height;
         this.scene = scene;
     }
 
-    async Initialize()
+    initialize()
     {
-        await this.setupDevice();
         this.createAssets();
         this.makePipeline();
         this.prepareScene();
-        this.render();
-    }
-
-    async setupDevice()
-    {
-        if(!('gpu' in navigator))
-            throw 'No webGPU!';
-        const adapter: GPUAdapter = <GPUAdapter>await navigator.gpu?.requestAdapter();
-        if(adapter === null)
-            throw 'No adapter!';
-        this.device = <GPUDevice>await adapter?.requestDevice();
-        console.log(this.device);
-
-        this.context = <GPUCanvasContext>this.canvas.getContext("webgpu");
-        this.context.configure({
-            device: this.device,
-            format: "bgra8unorm",
-            alphaMode: "opaque"
-        });
-
     }
 
     private createAssets()
@@ -66,8 +49,8 @@ export class Renderer
         this.color_buffer = this.device.createTexture(
             {
                 size: {
-                    width: this.canvas.width,
-                    height: this.canvas.height,
+                    width: this.width,
+                    height: this.height,
                 },
                 format: "rgba8unorm",
                 usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
@@ -219,7 +202,7 @@ export class Renderer
 
             compute: {
                 module: this.device.createShaderModule({
-                    code: raytracer_kernel,
+                    code: rasterizer_kernel,
                 }),
                 entryPoint: 'main',
             },
@@ -291,8 +274,8 @@ export class Renderer
     private prepareScene()
     {
         const sceneData: Int32Array = new Int32Array(4);
-        sceneData[0] = this.canvas.width;
-        sceneData[1] = this.canvas.height;
+        sceneData[0] = this.width;
+        sceneData[1] = this.height;
         sceneData[2] = 0;
         sceneData[3] = this.scene.spheres.length;
         this.device.queue.writeBuffer(this.bufferScene, 0, sceneData, 0, 4);
@@ -362,7 +345,7 @@ export class Renderer
         const ray_trace_pass: GPUComputePassEncoder = commandEncoder.beginComputePass();
         ray_trace_pass.setPipeline(this.ray_tracing_pipeline);
         ray_trace_pass.setBindGroup(0, this.ray_tracing_bind_group);
-        ray_trace_pass.dispatchWorkgroups(this.canvas.width, this.canvas.height, 1);
+        ray_trace_pass.dispatchWorkgroups(this.width, this.height, 1);
         ray_trace_pass.end();
 
         const textureView: GPUTextureView = this.context.getCurrentTexture().createView();

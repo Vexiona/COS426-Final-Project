@@ -1,4 +1,4 @@
-import rasterizer_kernel from "./shaders/resterizer.wgsl";
+import rasterizer_kernel from "./shaders/rasterizer.wgsl";
 import screen_shader from "./shaders/screen_shader.wgsl";
 import { Scene } from "./scene";
 

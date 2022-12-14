@@ -8,6 +8,7 @@ interface Position
 interface RenderData
 {
     message?: string;
+    time?: number;
     player1?: Position;
     player2?: Position;
 }

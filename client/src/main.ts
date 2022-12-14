@@ -44,13 +44,13 @@ function connect()
         if(renderData.message === 'Player 0')
         {
             console.log("I am Player 1");
-            renderer.setPlayer(1);
+            renderer.setPlayer(0);
             renderer.render();
         }
         else if(renderData.message === 'Player 1')
         {
             console.log('I am Player 2');
-            renderer.setPlayer(2);
+            renderer.setPlayer(1);
             renderer.render();
         }
         else if(renderData.message === 'renderData')

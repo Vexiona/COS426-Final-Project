@@ -6,13 +6,16 @@ import tex_font_url from '../../media/game_font.png';
 import bg1_1 from '../../media/bg/1/layers/sky.png';
 import bg1_2 from '../../media/bg/1/layers/clouds_1.png';
 import bg1_3 from '../../media/bg/1/layers/clouds_2.png';
-import bg1_4 from '../../media/bg/1/layers/clouds_3.png';
-import bg1_5 from '../../media/bg/1/layers/clouds_4.png';
-import bg1_6 from '../../media/bg/1/layers/rocks_1.png';
-import bg1_7 from '../../media/bg/1/layers/rocks_2.png';
+import bg1_4 from '../../media/bg/1/layers/rocks_1.png';
+import bg1_5 from '../../media/bg/1/layers/clouds_3.png';
+import bg1_6 from '../../media/bg/1/layers/rocks_2.png';
+import bg1_7 from '../../media/bg/1/layers/clouds_4.png';
 const URLS_BG = [
     [bg1_1, bg1_2, bg1_3, bg1_4, bg1_5, bg1_6, bg1_7]
 ];
+import char1 from '../../media/char/1.png';
+import char2 from '../../media/char/2.png';
+const URLS_CHARS = [char1, char2];
 
 export class Renderer
 {
@@ -34,13 +37,15 @@ export class Renderer
     private rep_clm_sampler!: GPUSampler;
     private clm_clm_sampler!: GPUSampler;
 
-    private tex_loaded: number = 0;
-    private tex_total: number = 1;
     private tex_font!: GPUTexture;
     private tex_font_view!: GPUTextureView;
     private tex_bg!: GPUTexture[];
     private tex_bg_view!: GPUTextureView[];
+    private buffer_bg_scales!: GPUBuffer;
+    private tex_chars!: GPUTexture;
+    private tex_chars_view!: GPUTextureView;
 
+    private bufferData!: GPUBuffer;
     private bufferCamera!: GPUBuffer;
     private bufferDynamicObjects!: GPUBuffer;
     private bufferScene!: GPUBuffer;
@@ -62,11 +67,6 @@ export class Renderer
         this.width = (<HTMLCanvasElement>context.canvas).width;
         this.height = (<HTMLCanvasElement>context.canvas).height;
         this.scene = scene;
-    }
-
-    setPlayer(pno: number)
-    {
-        this.pno = pno;
     }
 
     async initialize()
@@ -134,6 +134,12 @@ export class Renderer
             maxAnisotropy: 1
         });
 
+        //scene uniform data
+        this.bufferData = this.device.createBuffer({
+            size: 8,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        })
+
         //camera parameters
         this.bufferCamera = this.device.createBuffer({
             size: 16,
@@ -161,6 +167,13 @@ export class Renderer
         //static objects
         this.bufferStaticObjects = this.device.createBuffer({
             size: 32 * this.scene.characters.length,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        });
+
+        
+        //scale of each background layer
+        this.buffer_bg_scales = this.device.createBuffer({
+            size: 4 * 10,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         });
     }
@@ -224,6 +237,9 @@ export class Renderer
         this.tex_bg[0] = await this.webGPUTextureArrayFromImageUrls(URLS_BG[0]);
         for(let i = 0; i < this.tex_bg.length; i++)
             this.tex_bg_view[i] = this.tex_bg[i].createView();
+
+        this.tex_chars = await this.webGPUTextureArrayFromImageUrls(URLS_CHARS);
+        this.tex_chars_view = this.tex_chars.createView();
     }
 
     private makePipeline()
@@ -257,8 +273,7 @@ export class Renderer
                     binding: 3,
                     visibility: GPUShaderStage.COMPUTE,
                     buffer: {
-                        type: "read-only-storage",
-                        hasDynamicOffset: false
+                        type: "uniform",
                     }
                 },
                 {
@@ -271,6 +286,14 @@ export class Renderer
                 },
                 {
                     binding: 5,
+                    visibility: GPUShaderStage.COMPUTE,
+                    buffer: {
+                        type: "read-only-storage",
+                        hasDynamicOffset: false
+                    }
+                },
+                {
+                    binding: 6,
                     visibility: GPUShaderStage.COMPUTE,
                     buffer: {
                         type: "read-only-storage",
@@ -290,29 +313,35 @@ export class Renderer
                 {
                     binding: 1,
                     resource: {
-                        buffer: this.bufferCamera,
+                        buffer: this.bufferData,
                     }
                 },
                 {
                     binding: 2,
                     resource: {
-                        buffer: this.bufferDynamicObjects,
+                        buffer: this.bufferCamera,
                     }
                 },
                 {
                     binding: 3,
                     resource: {
-                        buffer: this.bufferScene,
+                        buffer: this.bufferDynamicObjects,
                     }
                 },
                 {
                     binding: 4,
                     resource: {
-                        buffer: this.bufferLights,
+                        buffer: this.bufferScene,
                     }
                 },
                 {
                     binding: 5,
+                    resource: {
+                        buffer: this.bufferLights,
+                    }
+                },
+                {
+                    binding: 6,
                     resource: {
                         buffer: this.bufferStaticObjects,
                     }
@@ -381,7 +410,20 @@ export class Renderer
                     binding: 1,
                     visibility: GPUShaderStage.COMPUTE,
                     texture: { viewDimension: '2d-array' }
-                }
+                },
+                {
+                    binding: 2,
+                    visibility: GPUShaderStage.COMPUTE,
+                    buffer: {
+                        type: "read-only-storage",
+                        hasDynamicOffset: false
+                    }
+                },
+                {
+                    binding: 3,
+                    visibility: GPUShaderStage.COMPUTE,
+                    texture: { viewDimension: '2d-array' }
+                },
             ]
         });
 
@@ -395,6 +437,16 @@ export class Renderer
                 {
                     binding: 1,
                     resource: this.tex_bg_view[0]
+                },
+                {
+                    binding: 2,
+                    resource: {
+                        buffer: this.buffer_bg_scales,
+                    }
+                },
+                {
+                    binding: 3,
+                    resource: this.tex_chars_view
                 },
             ]
         });
@@ -485,6 +537,9 @@ export class Renderer
 
     private prepareScene()
     {
+        const bg_scales = new Float32Array([1000, 200, 150, 100, 75, 50, 40, 0, 0, 0]);
+        this.device.queue.writeBuffer(this.buffer_bg_scales, 0, bg_scales, 0, 10);
+
         const sceneData: Int32Array = new Int32Array(5);
         sceneData[0] = this.width;
         sceneData[1] = this.height;
@@ -506,15 +561,36 @@ export class Renderer
         this.device.queue.writeBuffer(this.bufferStaticObjects, 0, objectData, 0, 8);
     }
 
+    setPlayer(pno: number)
+    {
+        this.pno = pno;
+        this.device.queue.writeBuffer(this.bufferData, 4, new Int32Array([pno]), 0, 1);
+    }
+
+    private updateData()
+    {
+        this.device.queue.writeBuffer(
+            this.bufferData, 0, new Int32Array([
+                Math.floor(this.scene.time / 1000 * 20),
+            ]), 0, 1
+        )
+    }
     private updateCamera()
     {
-        const camera = this.scene.camera;
+        /*this.device.queue.writeBuffer(
+            this.bufferCamera, 0, new Float32Array([
+                this.scene.camera.position[0],
+                this.scene.camera.position[1],
+                this.scene.camera.position[2],
+                this.scene.camera.fov
+            ]), 0, 4
+        );*/
         this.device.queue.writeBuffer(
             this.bufferCamera, 0, new Float32Array([
-                camera.position[0],
-                camera.position[1],
-                camera.position[2],
-                camera.fov
+                this.scene.characters[this.pno].position[0],
+                this.scene.characters[this.pno].position[1],
+                this.scene.characters[this.pno].position[2],
+                this.scene.camera.fov
             ]), 0, 4
         );
     }
@@ -538,6 +614,7 @@ export class Renderer
 
     render = () =>
     {
+        this.updateData();
         this.updateCamera();
         this.updateDynamic();
 

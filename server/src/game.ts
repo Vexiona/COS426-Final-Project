@@ -35,6 +35,7 @@ export class Game
         this.lastPhyUpdate = time;
         return <RenderData>{
             message: "renderData",
+            time: time,
             player1: this.characters[0],
             player2: this.characters[1],
         };

@@ -6,8 +6,11 @@ export class Scene
     readonly characters: Character[]
     readonly camera: Camera
 
+    time: number;
+
     constructor() {
 
+        this.time = 0;
         this.characters = new Array(2);
         for(let i=0; i < this.characters.length; i++)
         {
@@ -39,5 +42,6 @@ export class Scene
         this.characters[1].position[0] = renderData.player2!.x;
         this.characters[1].position[1] = renderData.player2!.y;
         this.characters[1].position[2] = renderData.player2!.z;
+        this.time = renderData.time!;
     }
 }

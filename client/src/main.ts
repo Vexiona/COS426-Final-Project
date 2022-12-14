@@ -7,8 +7,8 @@ import { Renderer as Renderer3d } from './3d/renderer.js';
 var device: GPUDevice;
 var context: GPUCanvasContext;
 
-var pno: any = undefined;
 var scene: Scene2d | Scene3d;
+var renderer: Renderer2d | Renderer3d;
 
 function connect()
 {
@@ -41,15 +41,17 @@ function connect()
             console.log("Not JSON");
             return;
         }
-        if(renderData.message === 'Player 1')
+        if(renderData.message === 'Player 0')
         {
             console.log("I am Player 1");
-            pno = 1;
+            renderer.setPlayer(1);
+            renderer.render();
         }
-        else if(renderData.message === 'Player 2')
+        else if(renderData.message === 'Player 1')
         {
             console.log('I am Player 2');
-            pno = 2;
+            renderer.setPlayer(2);
+            renderer.render();
         }
         else if(renderData.message === 'renderData')
         {
@@ -119,11 +121,10 @@ async function main()
 
     scene = new Scene2d();
 
-    const renderer = new Renderer2d(device, context, scene);
+    renderer = new Renderer2d(device, context, scene);
 
     await renderer.initialize();
     await login();
-    renderer.render();
 }
 
 window.onload = main;

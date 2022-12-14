@@ -5,6 +5,7 @@ import { Scene } from "./scene";
 export class Renderer
 {
     scene: Scene;
+    pno: number = 1;
 
     device: GPUDevice;
     context: GPUCanvasContext;
@@ -34,6 +35,11 @@ export class Renderer
         this.width = (<HTMLCanvasElement>context.canvas).width;
         this.height = (<HTMLCanvasElement>context.canvas).height;
         this.scene = scene;
+    }
+
+    setPlayer(pno: number)
+    {
+        this.pno = pno;
     }
 
     initialize()

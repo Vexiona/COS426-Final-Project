@@ -3,38 +3,57 @@ import screen_shader from "./shaders/screen_shader.wgsl";
 import { Scene } from "./scene";
 
 import tex_font_url from '../../media/game_font.png';
+import bg1_1 from '../../media/bg/1/layers/sky.png';
+import bg1_2 from '../../media/bg/1/layers/clouds_1.png';
+import bg1_3 from '../../media/bg/1/layers/clouds_2.png';
+import bg1_4 from '../../media/bg/1/layers/clouds_3.png';
+import bg1_5 from '../../media/bg/1/layers/clouds_4.png';
+import bg1_6 from '../../media/bg/1/layers/rocks_1.png';
+import bg1_7 from '../../media/bg/1/layers/rocks_2.png';
+const URLS_BG = [
+    [bg1_1, bg1_2, bg1_3, bg1_4, bg1_5, bg1_6, bg1_7]
+];
 
 export class Renderer
 {
-    scene: Scene;
+    private scene: Scene;
+    private pno: number = 1;
 
-    device: GPUDevice;
-    context: GPUCanvasContext;
+    private device: GPUDevice;
+    private context: GPUCanvasContext;
 
-    width: number;
-    height: number;
+    private width: number;
+    private height: number;
 
-    color_buffer!: GPUTexture;
-    color_buffer_view!: GPUTextureView;
-    screen_sampler!: GPUSampler;
+    private color_buffer!: GPUTexture;
+    private color_buffer_view!: GPUTextureView;
+    private screen_sampler!: GPUSampler;
 
-    tex_loaded: number = 0;
-    tex_total: number = 1;
-    tex_font!: GPUTexture;
-    tex_font_view!: GPUTextureView;
+    private rep_rep_sampler!: GPUSampler;
+    private clm_rep_sampler!: GPUSampler;
+    private rep_clm_sampler!: GPUSampler;
+    private clm_clm_sampler!: GPUSampler;
 
-    bufferCamera!: GPUBuffer;
-    bufferDynamicObjects!: GPUBuffer;
-    bufferScene!: GPUBuffer;
-    bufferLights!: GPUBuffer;
-    bufferStaticObjects!: GPUBuffer;
+    private tex_loaded: number = 0;
+    private tex_total: number = 1;
+    private tex_font!: GPUTexture;
+    private tex_font_view!: GPUTextureView;
+    private tex_bg!: GPUTexture[];
+    private tex_bg_view!: GPUTextureView[];
 
-    ray_tracing_pipeline!: GPUComputePipeline;
-    ray_tracing_bind_group!: GPUBindGroup;
-    tex_bind_group!: GPUBindGroup;
+    private bufferCamera!: GPUBuffer;
+    private bufferDynamicObjects!: GPUBuffer;
+    private bufferScene!: GPUBuffer;
+    private bufferLights!: GPUBuffer;
+    private bufferStaticObjects!: GPUBuffer;
 
-    screen_pipeline!: GPURenderPipeline;
-    screen_bind_group!: GPUBindGroup;
+    private raster_pipeline!: GPUComputePipeline;
+    private raster_bind_group!: GPUBindGroup;
+    private sampler_bind_group!: GPUBindGroup;
+    private tex_bind_group!: GPUBindGroup;
+
+    private screen_pipeline!: GPURenderPipeline;
+    private screen_bind_group!: GPUBindGroup;
 
     constructor(device: GPUDevice, context: GPUCanvasContext, scene: Scene)
     {
@@ -43,6 +62,11 @@ export class Renderer
         this.width = (<HTMLCanvasElement>context.canvas).width;
         this.height = (<HTMLCanvasElement>context.canvas).height;
         this.scene = scene;
+    }
+
+    setPlayer(pno: number)
+    {
+        this.pno = pno;
     }
 
     async initialize()
@@ -68,6 +92,39 @@ export class Renderer
         );
         this.color_buffer_view = this.color_buffer.createView();
 
+        this.rep_rep_sampler = this.device.createSampler({
+            addressModeU: "repeat",
+            addressModeV: "repeat",
+            magFilter: "linear",
+            minFilter: "nearest",
+            mipmapFilter: "nearest",
+            maxAnisotropy: 1
+        });
+        this.clm_rep_sampler = this.device.createSampler({
+            addressModeU: "clamp-to-edge",
+            addressModeV: "repeat",
+            magFilter: "linear",
+            minFilter: "nearest",
+            mipmapFilter: "nearest",
+            maxAnisotropy: 1
+        });
+        this.rep_clm_sampler = this.device.createSampler({
+            addressModeU: "repeat",
+            addressModeV: "clamp-to-edge",
+            magFilter: "linear",
+            minFilter: "nearest",
+            mipmapFilter: "nearest",
+            maxAnisotropy: 1
+        });
+        this.clm_clm_sampler = this.device.createSampler({
+            addressModeU: "clamp-to-edge",
+            addressModeV: "clamp-to-edge",
+            magFilter: "linear",
+            minFilter: "nearest",
+            mipmapFilter: "nearest",
+            maxAnisotropy: 1
+        });
+
         this.screen_sampler = this.device.createSampler({
             addressModeU: "repeat",
             addressModeV: "repeat",
@@ -91,7 +148,7 @@ export class Renderer
 
         //scene parameters
         this.bufferScene = this.device.createBuffer({
-            size: 16,
+            size: 20,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         });
 
@@ -108,38 +165,70 @@ export class Renderer
         });
     }
 
-    private webGPUTextureFromImageBitmapOrCanvas(source: ImageBitmap)
-    {
-        const textureDescriptor: GPUTextureDescriptor = {
-            size: { width: source.width, height: source.height },
-            format: 'rgba8unorm',
-            usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT
-        };
-        const texture = this.device.createTexture(textureDescriptor);
-
-        this.device.queue.copyExternalImageToTexture({ source }, { texture }, textureDescriptor.size);
-
-        return texture;
-    }
-
     private async webGPUTextureFromImageUrl(url: string)
     {
         const response = await fetch(url);
         const blob = await response.blob();
         const imgBitmap = await createImageBitmap(blob);
 
-        return this.webGPUTextureFromImageBitmapOrCanvas(imgBitmap);
+        const textureDescriptor: GPUTextureDescriptor = {
+            size: { width: imgBitmap.width, height: imgBitmap.height },
+            format: 'rgba8unorm',
+            usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT
+        };
+        const texture = this.device.createTexture(textureDescriptor);
+
+        this.device.queue.copyExternalImageToTexture(
+            { source: imgBitmap },
+            { texture: texture },
+            { width: imgBitmap.width, height: imgBitmap.height }
+        );
+        return texture;
+    }
+
+    private async webGPUTextureArrayFromImageUrls(urls: string[])
+    {
+        let texture!: GPUTexture;
+        for(let i = 0; i < urls.length; i++)
+        {
+            const response = await fetch(urls[i]);
+            const blob = await response.blob();
+            const imgBitmap = await createImageBitmap(blob);
+
+            if(i == 0)
+            {
+                texture = this.device.createTexture({
+                    size: { width: imgBitmap.width, height: imgBitmap.height, depthOrArrayLayers: urls.length },
+                    format: 'rgba8unorm',
+                    usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT
+                });
+            }
+
+            this.device.queue.copyExternalImageToTexture(
+                { source: imgBitmap },
+                { texture: texture, origin: [0, 0, i] },
+                { width: imgBitmap.width, height: imgBitmap.height, depthOrArrayLayers: 1 }
+            );
+        }
+
+        return texture;
     }
 
     private async loadAssets()
     {
         this.tex_font = await this.webGPUTextureFromImageUrl(tex_font_url);
         this.tex_font_view = this.tex_font.createView();
+
+        this.tex_bg = [];
+        this.tex_bg_view = [];
+        this.tex_bg[0] = await this.webGPUTextureArrayFromImageUrls(URLS_BG[0]);
+        for(let i = 0; i < this.tex_bg.length; i++)
+            this.tex_bg_view[i] = this.tex_bg[i].createView();
     }
 
     private makePipeline()
     {
-        const ray_tracing_bind_group_layout = this.device.createBindGroupLayout({
+        const raster_bind_group_layout = this.device.createBindGroupLayout({
             entries: [
                 {
                     binding: 0,
@@ -191,8 +280,8 @@ export class Renderer
             ]
         });
 
-        this.ray_tracing_bind_group = this.device.createBindGroup({
-            layout: ray_tracing_bind_group_layout,
+        this.raster_bind_group = this.device.createBindGroup({
+            layout: raster_bind_group_layout,
             entries: [
                 {
                     binding: 0,
@@ -231,7 +320,8 @@ export class Renderer
             ]
         });
 
-        const tex_bind_group_layout = this.device.createBindGroupLayout({
+        //sampler bind group
+        const sampler_bind_group_layout = this.device.createBindGroupLayout({
             entries: [
                 {
                     binding: 0,
@@ -241,7 +331,56 @@ export class Renderer
                 {
                     binding: 1,
                     visibility: GPUShaderStage.COMPUTE,
+                    sampler: {}
+                },
+                {
+                    binding: 2,
+                    visibility: GPUShaderStage.COMPUTE,
+                    sampler: {}
+                },
+                {
+                    binding: 3,
+                    visibility: GPUShaderStage.COMPUTE,
+                    sampler: {}
+                },
+            ]
+        });
+
+        this.sampler_bind_group = this.device.createBindGroup({
+            layout: sampler_bind_group_layout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: this.rep_rep_sampler
+                },
+                {
+                    binding: 1,
+                    resource: this.clm_rep_sampler
+                },
+                {
+                    binding: 2,
+                    resource: this.rep_clm_sampler
+                },
+                {
+                    binding: 3,
+                    resource: this.clm_clm_sampler
+                },
+            ]
+        });
+
+
+        //character bind group
+        const tex_bind_group_layout = this.device.createBindGroupLayout({
+            entries: [
+                {
+                    binding: 0,
+                    visibility: GPUShaderStage.COMPUTE,
                     texture: {}
+                },
+                {
+                    binding: 1,
+                    visibility: GPUShaderStage.COMPUTE,
+                    texture: { viewDimension: '2d-array' }
                 }
             ]
         });
@@ -251,24 +390,26 @@ export class Renderer
             entries: [
                 {
                     binding: 0,
-                    resource: this.screen_sampler
+                    resource: this.tex_font_view
                 },
                 {
                     binding: 1,
-                    resource: this.tex_font_view
+                    resource: this.tex_bg_view[0]
                 },
             ]
         });
 
-        const ray_tracing_pipeline_layout = this.device.createPipelineLayout({
+        //compute pipeline
+        const raster_pipeline_layout = this.device.createPipelineLayout({
             bindGroupLayouts: [
-                ray_tracing_bind_group_layout,
+                raster_bind_group_layout,
+                sampler_bind_group_layout,
                 tex_bind_group_layout
             ]
         });
 
-        this.ray_tracing_pipeline = this.device.createComputePipeline({
-            layout: ray_tracing_pipeline_layout,
+        this.raster_pipeline = this.device.createComputePipeline({
+            layout: raster_pipeline_layout,
 
             compute: {
                 module: this.device.createShaderModule({
@@ -294,6 +435,7 @@ export class Renderer
 
         });
 
+        //screen pipeline (and groups)
         this.screen_bind_group = this.device.createBindGroup({
             layout: screen_bind_group_layout,
             entries: [
@@ -343,12 +485,13 @@ export class Renderer
 
     private prepareScene()
     {
-        const sceneData: Int32Array = new Int32Array(4);
+        const sceneData: Int32Array = new Int32Array(5);
         sceneData[0] = this.width;
         sceneData[1] = this.height;
         sceneData[2] = this.scene.characters.length; //dynamic
         sceneData[3] = 0; //static
-        this.device.queue.writeBuffer(this.bufferScene, 0, sceneData, 0, 4);
+        sceneData[4] = 7; //background layers count
+        this.device.queue.writeBuffer(this.bufferScene, 0, sceneData, 0, 5);
 
         const objectData: Float32Array = new Float32Array(8 * this.scene.characters.length);
         objectData[0] = 0.0; //n.x
@@ -401,9 +544,10 @@ export class Renderer
         const commandEncoder: GPUCommandEncoder = this.device.createCommandEncoder();
 
         const ray_trace_pass: GPUComputePassEncoder = commandEncoder.beginComputePass();
-        ray_trace_pass.setPipeline(this.ray_tracing_pipeline);
-        ray_trace_pass.setBindGroup(0, this.ray_tracing_bind_group);
-        ray_trace_pass.setBindGroup(1, this.tex_bind_group);
+        ray_trace_pass.setPipeline(this.raster_pipeline);
+        ray_trace_pass.setBindGroup(0, this.raster_bind_group);
+        ray_trace_pass.setBindGroup(1, this.sampler_bind_group);
+        ray_trace_pass.setBindGroup(2, this.tex_bind_group);
         ray_trace_pass.dispatchWorkgroups(this.width, this.height, 1);
         ray_trace_pass.end();
 

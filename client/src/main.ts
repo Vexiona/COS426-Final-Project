@@ -16,16 +16,31 @@ function connect()
     ws.addEventListener('open', function(event)
     {
         ws.send('Hello Server!');
-        window.addEventListener("keydown", event =>
+        window.addEventListener('keydown', event =>
         {
             if(event.key == 'ArrowUp' || event.key == 'w' || event.key == 'W')
-                ws.send('W');
+                ws.send('W0');
             else if(event.key == 'ArrowDown' || event.key == 's' || event.key == 'S')
-                ws.send('S');
+                ws.send('S0');
             else if(event.key == 'ArrowLeft' || event.key == 'a' || event.key == 'A')
-                ws.send('A');
+                ws.send('A0');
             else if(event.key == 'ArrowRight' || event.key == 'd' || event.key == 'D')
-                ws.send('D');
+                ws.send('D0');
+            else if(event.key == ' ')
+                ws.send(' 0');
+        });
+        window.addEventListener('keyup', event =>
+        {
+            if(event.key == 'ArrowUp' || event.key == 'w' || event.key == 'W')
+                ws.send('W1');
+            else if(event.key == 'ArrowDown' || event.key == 's' || event.key == 'S')
+                ws.send('S1');
+            else if(event.key == 'ArrowLeft' || event.key == 'a' || event.key == 'A')
+                ws.send('A1');
+            else if(event.key == 'ArrowRight' || event.key == 'd' || event.key == 'D')
+                ws.send('D1');
+            else if(event.key == ' ')
+                ws.send(' 1');
         });
     });
     ws.addEventListener('message', function(event)

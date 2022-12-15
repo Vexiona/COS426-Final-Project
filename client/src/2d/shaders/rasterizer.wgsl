@@ -72,7 +72,7 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>)
 
     var resColor: vec3<f32> = vec3(0.0, 0.0, 0.0);
 
-    //background
+    //background parallax
     //let camera_scaled: vec2<f32> = camera.pos.xz / f32(scene_data.height);
     for(var i: i32 = 0; i < scene_data.nBackgroundLayers; i++)
     {
@@ -80,6 +80,7 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>)
         resColor = resColor * (1 - bg.a) + bg.rgb * bg.a;
     }
     //resColor += vec3<f32>(0.4, 0.0, 0.0) * 1.0;
+    //render the other characters
     for(var i: i32 = 0; i < scene_data.nCharacters; i++)
     {
         if(i == data.player) { continue; }

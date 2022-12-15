@@ -1,12 +1,18 @@
+import math from 'mathjs';
+
 import { Player } from "./player.js";
 import { CharacterData } from "./character.js";
+import { Level } from './2d/level.js';
 
 export class Game
 {
-    private static CHAR_HORIZ_SPEED: number = 10;
-    private static GRAVITY: number = -25;
-    private static CHAR_MAX_VERT_SPEED: number = 20;
-    private static CHAR_GROUNDED_HORIZ_DECELERATION_FACTOR = 1.05;
+    private static EPS = 1e-4;
+    private static INFINITY = 100000.0;
+
+    private static CHAR_HORIZ_SPEED = 10;
+    private static GRAVITY = -25;
+    private static CHAR_MAX_VERT_SPEED = 20;
+    private static CHAR_GROUNDED_HORIZ_DECELERATION_FACTOR = 1.2;
     private static CHAR_JUMP_VERT_SPEED = 10;
     private static MAX_AIRBORNE_HORIZ_SPEED = 5;
     private static CHAR_AIRBORNE_HORIZ_ACC = 100;
@@ -23,6 +29,98 @@ export class Game
         for(let i = 0; i < this.players.length; i++)
             this.characters[i] = new CharacterData();
         this.lastPhyUpdate = performance.now();
+    }
+
+    private intersect_right(real_pos: number[])
+    {
+        let closest_intersect_idx: number = -1;
+        let closest_intersect: number[] = [Game.INFINITY, 0.0, 0.0];
+        for(let i = 0; i < Level.colliders.length; i++)
+        {
+            let l = Level.colliders[i].handles[4 * 1 + 2] - Level.colliders[i].handles[4 * 0 + 2];
+            if(Level.colliders[i].info[0] == 1)
+            {
+                if(Math.abs(l) < Game.EPS)
+                {
+                    continue;
+                }
+                let t = (real_pos[2] - Level.colliders[i].handles[4 * 0 + 2]) / l;
+                if(t < 0 || t > 1)
+                {
+                    continue;
+                }
+                let intersect = [
+                    (1 - t) * Level.colliders[i].handles[4 * 0 + 0] + t * Level.colliders[i].handles[4 * 1 + 0],
+                    (1 - t) * Level.colliders[i].handles[4 * 0 + 1] + t * Level.colliders[i].handles[4 * 1 + 1],
+                    (1 - t) * Level.colliders[i].handles[4 * 0 + 2] + t * Level.colliders[i].handles[4 * 1 + 2],
+                ];
+                if(intersect[0] > real_pos[0] && intersect[0] < closest_intersect[0])
+                {
+                    closest_intersect_idx = i;
+                    closest_intersect = intersect;
+                }
+            }
+        }
+        if(closest_intersect_idx != -1)
+        {
+            let slope = [
+                Level.colliders[closest_intersect_idx].handles[4 * 1 + 0] - Level.colliders[closest_intersect_idx].handles[4 * 0 + 0],
+                Level.colliders[closest_intersect_idx].handles[4 * 1 + 1] - Level.colliders[closest_intersect_idx].handles[4 * 0 + 1],
+                Level.colliders[closest_intersect_idx].handles[4 * 1 + 2] - Level.colliders[closest_intersect_idx].handles[4 * 0 + 2]
+            ];
+            let dir = [1.0, 0.0, 0.0];
+            if(dir[2] * slope[0] - dir[0] * slope[2] < 0)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private intersect_up(real_pos: number[])
+    {
+        let closest_intersect_idx: number = -1;
+        let closest_intersect: number[] = [0.0, 0.0, Game.INFINITY];
+        for(let i = 0; i < Level.colliders.length; i++)
+        {
+            let l = Level.colliders[i].handles[4 * 1 + 0] - Level.colliders[i].handles[4 * 0 + 0];
+            if(Level.colliders[i].info[0] == 1)
+            {
+                if(Math.abs(l) < Game.EPS)
+                {
+                    continue;
+                }
+                let t = (real_pos[0] - Level.colliders[i].handles[4 * 0 + 0]) / l;
+                if(t < 0 || t > 1)
+                {
+                    continue;
+                }
+                let intersect = [
+                    (1 - t) * Level.colliders[i].handles[4 * 0 + 0] + t * Level.colliders[i].handles[4 * 1 + 0],
+                    (1 - t) * Level.colliders[i].handles[4 * 0 + 1] + t * Level.colliders[i].handles[4 * 1 + 1],
+                    (1 - t) * Level.colliders[i].handles[4 * 0 + 2] + t * Level.colliders[i].handles[4 * 1 + 2],
+                ];
+                if(intersect[2] > real_pos[2] && intersect[2] < closest_intersect[2])
+                {
+                    closest_intersect_idx = i;
+                    closest_intersect = intersect;
+                }
+            }
+        }
+        if(closest_intersect_idx != -1)
+        {
+            let slope = [
+                Level.colliders[closest_intersect_idx].handles[4 * 1 + 0] - Level.colliders[closest_intersect_idx].handles[4 * 0 + 0],
+                Level.colliders[closest_intersect_idx].handles[4 * 1 + 1] - Level.colliders[closest_intersect_idx].handles[4 * 0 + 1],
+                Level.colliders[closest_intersect_idx].handles[4 * 1 + 2] - Level.colliders[closest_intersect_idx].handles[4 * 0 + 2]
+            ];
+            let dir = [0.0, 0.0, 1.0];
+            if(dir[2] * slope[0] - dir[0] * slope[2] < 0)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     physics(): RenderData
@@ -42,8 +140,11 @@ export class Game
                 this.characters[i].pos.x += 0.1;*/
             if(this.players[i].pendingJump)
             {
-                this.characters[i].v[2] = Game.CHAR_JUMP_VERT_SPEED;
-                this.characters[i].grounded = false;
+                if(this.characters[i].grounded)
+                {
+                    this.characters[i].v[2] = Game.CHAR_JUMP_VERT_SPEED;
+                    this.characters[i].grounded = false;
+                }
                 this.players[i].pendingJump = false;
             }
             if(this.characters[i].grounded)
@@ -60,7 +161,24 @@ export class Game
                 {
                     this.characters[i].v[0] /= Game.CHAR_GROUNDED_HORIZ_DECELERATION_FACTOR;
                 }
-                this.characters[i].pos[0] += this.characters[i].v[0] * t;
+                let new_pos;
+                new_pos = [
+                    this.characters[i].pos[0],
+                    this.characters[i].pos[1],
+                    this.characters[i].pos[2]
+                ];
+                new_pos[0] += this.characters[i].v[0] * t;
+                if(!this.intersect_right(new_pos))
+                    this.characters[i].pos[0] += this.characters[i].v[0] * t;
+                
+                new_pos = [
+                    this.characters[i].pos[0],
+                    this.characters[i].pos[1],
+                    this.characters[i].pos[2]
+                ];
+                new_pos[2] -= 0.05;
+                if(!this.intersect_up(new_pos))
+                    this.characters[i].grounded = false;
             }
             else
             {
@@ -93,13 +211,33 @@ export class Game
                     }
                     this.characters[i].facing = this.players[i].lastDirKey;
                 }
-                this.characters[i].pos[0] += this.characters[i].v[0] * t;
-                this.characters[i].pos[2] += this.characters[i].v[2] * t;
-                if(this.characters[i].pos[2] < 0)
+                let new_pos;
+                new_pos = [
+                    this.characters[i].pos[0],
+                    this.characters[i].pos[1],
+                    this.characters[i].pos[2]
+                ];
+                new_pos[0] += this.characters[i].v[0] * t;
+                if(!this.intersect_right(new_pos))
+                    this.characters[i].pos[0] += this.characters[i].v[0] * t;
+                
+                new_pos = [
+                    this.characters[i].pos[0],
+                    this.characters[i].pos[1],
+                    this.characters[i].pos[2]
+                ];
+                new_pos[2] += this.characters[i].v[2] * t;
+                if(this.intersect_up(new_pos))
+                    this.characters[i].grounded = true;
+                else
+                    this.characters[i].pos[2] += this.characters[i].v[2] * t;
+                //this.characters[i].pos[0] += this.characters[i].v[0] * t;
+                //this.characters[i].pos[2] += this.characters[i].v[2] * t;
+                /*if(this.characters[i].pos[2] < 0)
                 {
                     this.characters[i].pos[2] = 0;
                     this.characters[i].grounded = true;
-                }
+                }*/
             }
         }
 

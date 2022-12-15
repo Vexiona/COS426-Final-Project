@@ -1,6 +1,7 @@
 import rasterizer_kernel from "./shaders/rasterizer.wgsl";
 import screen_shader from "./shaders/screen_shader.wgsl";
 import { Scene } from "./scene";
+import { Level } from "./level.js";
 
 import tex_font_url from '../../media/game_font.png';
 import bg1_1 from '../../media/bg/1/layers/sky.png';
@@ -51,7 +52,7 @@ export class Renderer
     private bufferCamera!: GPUBuffer;
     private bufferDynamicObjects!: GPUBuffer;
     private bufferScene!: GPUBuffer;
-    private bufferLights!: GPUBuffer;
+    private bufferEnv!: GPUBuffer;
     private bufferStaticObjects!: GPUBuffer;
 
     private raster_pipeline!: GPUComputePipeline;
@@ -140,7 +141,7 @@ export class Renderer
         this.bufferData = this.device.createBuffer({
             size: 8,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-        })
+        });
 
         //camera parameters
         this.bufferCamera = this.device.createBuffer({
@@ -156,13 +157,13 @@ export class Renderer
 
         //scene parameters
         this.bufferScene = this.device.createBuffer({
-            size: 20,
+            size: 24,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         });
 
         //scene lights
-        this.bufferLights = this.device.createBuffer({
-            size: 32 * this.scene.characters.length,
+        this.bufferEnv = this.device.createBuffer({
+            size: 80 * Level.colliders.length,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         });
 
@@ -172,7 +173,7 @@ export class Renderer
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         });
 
-        
+
         //scale of each background layer
         this.buffer_bg_scales = this.device.createBuffer({
             size: 4 * 10,
@@ -339,7 +340,7 @@ export class Renderer
                 {
                     binding: 5,
                     resource: {
-                        buffer: this.bufferLights,
+                        buffer: this.bufferEnv,
                     }
                 },
                 {
@@ -542,13 +543,20 @@ export class Renderer
         const bg_scales = new Float32Array([1000, 200, 150, 100, 75, 50, 40, 0, 0, 0]);
         this.device.queue.writeBuffer(this.buffer_bg_scales, 0, bg_scales, 0, 10);
 
-        const sceneData: Int32Array = new Int32Array(5);
+        const sceneData: Int32Array = new Int32Array(6);
         sceneData[0] = this.width;
         sceneData[1] = this.height;
         sceneData[2] = this.scene.characters.length; //dynamic
         sceneData[3] = 0; //static
         sceneData[4] = 7; //background layers count
-        this.device.queue.writeBuffer(this.bufferScene, 0, sceneData, 0, 5);
+        sceneData[5] = Level.colliders.length;
+        this.device.queue.writeBuffer(this.bufferScene, 0, sceneData, 0, 6);
+
+        for(let i = 0; i < Level.colliders.length; i++)
+        {
+            this.device.queue.writeBuffer(this.bufferEnv, 80 * i, Level.colliders[i].handles, 0, 16);
+            this.device.queue.writeBuffer(this.bufferEnv, 80 * i + 64, Level.colliders[i].info, 0, 4);
+        }
 
         const objectData: Float32Array = new Float32Array(8 * this.scene.characters.length);
         objectData[0] = 0.0; //n.x
@@ -575,7 +583,7 @@ export class Renderer
             this.bufferData, 0, new Int32Array([
                 Math.floor(this.scene.time / 1000 * Renderer.FPS_ANIMATION),
             ]), 0, 1
-        )
+        );
     }
     private updateCamera()
     {
@@ -607,13 +615,13 @@ export class Renderer
             objectData_f32[1] = this.scene.characters[i].pos[1];
             objectData_f32[2] = this.scene.characters[i].pos[2];
             objectData_f32[3] = 0.0;
-            this.device.queue.writeBuffer(this.bufferDynamicObjects, 32*i, objectData_f32, 0, 4);
+            this.device.queue.writeBuffer(this.bufferDynamicObjects, 32 * i, objectData_f32, 0, 4);
 
             objectData_i32[0] = this.scene.characters[i].facing;
             objectData_i32[1] = 0;
             objectData_i32[2] = 0;
             objectData_i32[3] = 0;
-            this.device.queue.writeBuffer(this.bufferDynamicObjects, 32*i+16, objectData_i32, 0, 4);
+            this.device.queue.writeBuffer(this.bufferDynamicObjects, 32 * i + 16, objectData_i32, 0, 4);
         }
     }
 

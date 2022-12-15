@@ -7,6 +7,7 @@ export class Player
 
     public lastDirKey: number = 0;
     public lastDirKeyIsDown: boolean = false;
+    public pendingJump: boolean = false;
 
     constructor(userId: string, ws: WebSocket.WebSocket)
     {
@@ -14,7 +15,7 @@ export class Player
         this.ws = ws;
         ws.on('message', (data: WebSocket.RawData) =>
         {
-            if((<Buffer>data)[0] === 'W'.charCodeAt(0))
+            /*if((<Buffer>data)[0] === 'W'.charCodeAt(0))
             {
                 this.lastDirKey = 0;
                 if((<Buffer>data)[1] === '0'.charCodeAt(0))
@@ -27,8 +28,8 @@ export class Player
                 if((<Buffer>data)[1] === '0'.charCodeAt(0))
                     this.lastDirKeyIsDown = true;
                 else this.lastDirKeyIsDown = false;
-            }
-            else if((<Buffer>data)[0] === 'A'.charCodeAt(0))
+            }*/
+            if((<Buffer>data)[0] === 'A'.charCodeAt(0))
             {
                 this.lastDirKey = 2;
                 if((<Buffer>data)[1] === '0'.charCodeAt(0))
@@ -44,8 +45,7 @@ export class Player
             }
             else if((<Buffer>data)[0] === ' '.charCodeAt(0))
             {
-                this.lastDirKey = 4;
-                //this.lastDirKeyTime = performance.now();
+                this.pendingJump = true;
             }
         })
     }

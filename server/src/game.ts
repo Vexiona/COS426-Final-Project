@@ -3,10 +3,11 @@ import { CharacterData } from "./character.js";
 
 export class Game
 {
-    private static CHAR_HORIZ_SPEED: number = 20;
-    private static GRAVITY: number = -1;
-    private static MAX_VERT_SPEED: number = 5;
+    private static CHAR_HORIZ_SPEED: number = 10;
+    private static GRAVITY: number = -25;
+    private static MAX_VERT_SPEED: number = 20;
     private static HORIZ_DECELERATION_FACTOR = 1.05;
+    private static JUMP_VERT_SPEED = 5;
 
     private players: Player[];
 
@@ -37,6 +38,12 @@ export class Game
                 this.characters[i].pos.x -= 0.1;
             else if(this.players[i].lastKey === 3) //d
                 this.characters[i].pos.x += 0.1;*/
+            if(this.players[i].pendingJump)
+            {
+                this.characters[i].v[2] = Game.JUMP_VERT_SPEED;
+                this.characters[i].grounded = false;
+                this.players[i].pendingJump = false;
+            }
             if(this.characters[i].grounded)
             {
                 if(this.players[i].lastDirKeyIsDown === true)
@@ -56,7 +63,7 @@ export class Game
             else
             {
                 this.characters[i].v[2] += Game.GRAVITY * t;
-                if(this.characters[i].v[2] > Game.MAX_VERT_SPEED)
+                if(this.characters[i].v[2] < -Game.MAX_VERT_SPEED)
                     this.characters[i].v[2] = -Game.MAX_VERT_SPEED;
                 if(this.players[i].lastDirKeyIsDown === true)
                 {
@@ -68,6 +75,11 @@ export class Game
                 }
                 this.characters[i].pos[0] += this.characters[i].v[0] * t;
                 this.characters[i].pos[2] += this.characters[i].v[2] * t;
+                if(this.characters[i].pos[2] < 0)
+                {
+                    this.characters[i].pos[2] = 0;
+                    this.characters[i].grounded = true;
+                }
             }
         }
 

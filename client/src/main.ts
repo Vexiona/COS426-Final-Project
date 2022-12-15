@@ -10,6 +10,15 @@ var context: GPUCanvasContext;
 var scene: Scene2d;
 var renderer: Renderer2d;
 
+var last_movement_key = ' ';
+var pressed_keys = {
+    'w': false,
+    's': false,
+    'a': false,
+    'd': false,
+    'jump': false,
+}
+
 function connect()
 {
     const ws = new WebSocket('wss://' + window.location.host);
@@ -19,28 +28,71 @@ function connect()
         window.addEventListener('keydown', event =>
         {
             if(event.key == 'ArrowUp' || event.key == 'w' || event.key == 'W')
-                ws.send('W0');
+            {
+                if(!pressed_keys.w)
+                    ws.send('W0');
+                pressed_keys.w = true;
+                last_movement_key = 'w';
+            }
             else if(event.key == 'ArrowDown' || event.key == 's' || event.key == 'S')
-                ws.send('S0');
+            {
+                if(!pressed_keys.s)
+                    ws.send('S0');
+                pressed_keys.s = true;
+                last_movement_key = 's';
+            }
             else if(event.key == 'ArrowLeft' || event.key == 'a' || event.key == 'A')
-                ws.send('A0');
+            {
+                if(!pressed_keys.a)
+                    ws.send('A0');
+                pressed_keys.a = true;
+                last_movement_key = 'a';
+            }
             else if(event.key == 'ArrowRight' || event.key == 'd' || event.key == 'D')
-                ws.send('D0');
+            {
+                if(!pressed_keys.d)
+                    ws.send('D0');
+                pressed_keys.d = true;
+                last_movement_key = 'd';
+            }
             else if(event.key == ' ')
-                ws.send(' 0');
+            {
+                if(!pressed_keys.jump)
+                    ws.send(' 0');
+                pressed_keys.jump = true;
+            }
         });
         window.addEventListener('keyup', event =>
         {
             if(event.key == 'ArrowUp' || event.key == 'w' || event.key == 'W')
-                ws.send('W1');
+            {
+                if(last_movement_key == 'w')
+                    ws.send('W1');
+                pressed_keys.w = false;
+            }
             else if(event.key == 'ArrowDown' || event.key == 's' || event.key == 'S')
-                ws.send('S1');
+            {
+                if(last_movement_key == 's')
+                    ws.send('S1');
+                pressed_keys.s = false;
+            }
             else if(event.key == 'ArrowLeft' || event.key == 'a' || event.key == 'A')
-                ws.send('A1');
+            {
+                if(last_movement_key == 'a')
+                    ws.send('A1');
+                pressed_keys.a = false;
+            }
             else if(event.key == 'ArrowRight' || event.key == 'd' || event.key == 'D')
-                ws.send('D1');
+            {
+                if(last_movement_key == 'd')
+                    ws.send('D1');
+                pressed_keys.d = false;
+            }
             else if(event.key == ' ')
+            {
                 ws.send(' 1');
+                pressed_keys.jump = false;
+            }
         });
     });
     ws.addEventListener('message', function(event)
@@ -131,7 +183,7 @@ async function main()
     canvas2dctx.font = "bold 48px serif";
     canvas2dctx.fillStyle = "blue";
     canvas2dctx.fillText("Hello World!", 10, 10);*/
-
+    
     await initialize(canvas);
 
     scene = new Scene2d();

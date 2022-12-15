@@ -76,7 +76,7 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>)
     //let camera_scaled: vec2<f32> = camera.pos.xz / f32(scene_data.height);
     for(var i: i32 = 0; i < scene_data.nBackgroundLayers; i++)
     {
-        let bg: vec4<f32> = textureSampleLevel(tex_bgs, rep_clm_sampler, tex_pos + camera.pos.xz / tex_bgs_scales[i], i, 0.0);
+        let bg: vec4<f32> = textureSampleLevel(tex_bgs, rep_clm_sampler, tex_pos + vec2<f32>(camera.pos.x, -camera.pos.z) / tex_bgs_scales[i], i, 0.0);
         resColor = resColor * (1 - bg.a) + bg.rgb * bg.a;
     }
     //resColor += vec3<f32>(0.4, 0.0, 0.0) * 1.0;

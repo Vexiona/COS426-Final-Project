@@ -11,6 +11,7 @@ struct SceneData //size 24
     nCharacters: i32,
     nStaticObjects: i32,
     nBackgroundLayers: i32,
+    nColliders: i32,
 };
 
 struct Light //size 32
@@ -20,9 +21,15 @@ struct Light //size 32
     intensity: f32,
 };
 
-struct Object //size 32
+struct CharacterObject //size 32
 {
     data_f32: array<vec4<f32>, 1>,
+    data_i32: array<vec4<i32>, 1>,
+};
+
+struct ColliderObject //size 80
+{
+    data_f32: array<vec4<f32>, 4>,
     data_i32: array<vec4<i32>, 1>,
 };
 
@@ -32,7 +39,7 @@ struct Data //size 8
     player: i32,
 }
 
-const EPS: f32 = 1e-2;
+const EPS: f32 = 1e-4;
 const INFINITY: f32 = 100000.0;
 const HEIGHT_SCREEN: f32 = 10.0; //height in meters of screen
 const CHAR_HEIGHT: f32 = 1;
@@ -41,10 +48,10 @@ const CHAR_TEX_DIMS: vec2<f32> = vec2<f32>(192, 260);
 @group(0) @binding(0) var color_buffer: texture_storage_2d<rgba8unorm, write>; //screen output
 @group(0) @binding(1) var<uniform> data: Data;
 @group(0) @binding(2) var<uniform> camera: Camera;
-@group(0) @binding(3) var<uniform> characters: array<Object, 2>; //character data
+@group(0) @binding(3) var<uniform> characters: array<CharacterObject, 2>; //character data
 @group(0) @binding(4) var<storage, read> scene_data: SceneData;
-@group(0) @binding(5) var<storage, read> lights: array<Light>;
-@group(0) @binding(6) var<storage, read> static_objects: array<Object>;
+@group(0) @binding(5) var<storage, read> env: array<ColliderObject>;
+@group(0) @binding(6) var<storage, read> static_objects: array<CharacterObject>;
 
 @group(1) @binding(0) var rep_rep_sampler: sampler;
 @group(1) @binding(1) var clm_rep_sampler: sampler;
@@ -63,7 +70,7 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>)
 
     let real_pos: vec2<f32> = vec2<f32> (
         camera.scale * 0.5 * f32(2 * screen_pos.x - scene_data.width) / f32(scene_data.height) + camera.pos.x,
-        -camera.scale * 0.5 * f32(2 * screen_pos.y - scene_data.height) / f32(scene_data.height) + camera.pos.z
+        -camera.scale * 0.5 * f32(2 * screen_pos.y - scene_data.height) / f32(scene_data.height) + camera.pos.z + 3.0
     );
     let tex_pos: vec2<f32> = vec2<f32> (
         f32(screen_pos.x) / f32(scene_data.width),
@@ -72,14 +79,46 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>)
 
     var resColor: vec3<f32> = vec3(0.0, 0.0, 0.0);
 
-    //background
-    //let camera_scaled: vec2<f32> = camera.pos.xz / f32(scene_data.height);
+    //background parallax
     for(var i: i32 = 0; i < scene_data.nBackgroundLayers; i++)
     {
-        let bg: vec4<f32> = textureSampleLevel(tex_bgs, rep_clm_sampler, tex_pos + camera.pos.xz / tex_bgs_scales[i], i, 0.0);
+        let bg: vec4<f32> = textureSampleLevel(tex_bgs, rep_clm_sampler, tex_pos + vec2<f32>(camera.pos.x, -camera.pos.z + 3.0) / tex_bgs_scales[i], i, 0.0);
         resColor = resColor * (1 - bg.a) + bg.rgb * bg.a;
     }
-    //resColor += vec3<f32>(0.4, 0.0, 0.0) * 1.0;
+    //play layer
+    var closest_intersect_idx: i32 = -1;
+    var closest_intersect_x: f32 = INFINITY;
+    for(var i: i32 = 0; i < scene_data.nColliders; i++)
+    {
+        if(env[i].data_i32[0].x == 1)
+        {
+            if(abs(env[i].data_f32[1].z - env[i].data_f32[0].z) < EPS)
+            {
+                continue;
+            }
+            let t: f32 = (real_pos.y - env[i].data_f32[0].z) / (env[i].data_f32[1].z - env[i].data_f32[0].z);
+            if(t < 0 || t > 1)
+            {
+                continue;
+            }
+            let intersect: vec3<f32> = (1-t) * env[i].data_f32[0].xyz + t * env[i].data_f32[1].xyz;
+            if(intersect.x > real_pos.x && intersect.x < closest_intersect_x)
+            {
+                closest_intersect_idx = i;
+                closest_intersect_x = intersect.x;
+            }
+        }
+    }
+    if(closest_intersect_idx != -1)
+    {
+        let slope: vec3<f32> = env[closest_intersect_idx].data_f32[1].xyz - env[closest_intersect_idx].data_f32[0].xyz;
+        let cross_prod: vec3<f32> = cross(vec3<f32>(1.0, 0.0, 0.0), slope);
+        if(cross_prod.y < 0)
+        {
+            resColor = vec3<f32>(0.5, 0.6, 0.5);
+        }
+    }
+    //render the other characters
     for(var i: i32 = 0; i < scene_data.nCharacters; i++)
     {
         if(i == data.player) { continue; }

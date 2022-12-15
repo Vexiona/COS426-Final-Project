@@ -1,13 +1,6 @@
-interface Position
-{
-    x: number;
-    y: number;
-    z: number;
-}
-
 interface Character
 {
-    pos: Position;
+    pos: number[];
     facing: number;
 }
 

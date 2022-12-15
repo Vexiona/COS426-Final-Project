@@ -5,8 +5,9 @@ export class Player
     readonly userId: string;
     private ws: WebSocket.WebSocket;
 
-    public lastKey: number = 0;
-    public lastKeyTime: number = 0;
+    public lastDirKey: number = 0;
+    public lastDirKeyIsDown: boolean = false;
+    public pendingJump: boolean = false;
 
     constructor(userId: string, ws: WebSocket.WebSocket)
     {
@@ -14,25 +15,38 @@ export class Player
         this.ws = ws;
         ws.on('message', (data: WebSocket.RawData) =>
         {
-            if((<Buffer>data)[0] === 'W'.charCodeAt(0))
+            /*if((<Buffer>data)[0] === 'W'.charCodeAt(0))
             {
-                this.lastKey = 0;
-                this.lastKeyTime = performance.now();
+                this.lastDirKey = 0;
+                if((<Buffer>data)[1] === '0'.charCodeAt(0))
+                    this.lastDirKeyIsDown = true;
+                else this.lastDirKeyIsDown = false;
             }
             else if((<Buffer>data)[0] === 'S'.charCodeAt(0))
             {
-                this.lastKey = 1;
-                this.lastKeyTime = performance.now();
-            }
-            else if((<Buffer>data)[0] === 'A'.charCodeAt(0))
+                this.lastDirKey = 1;
+                if((<Buffer>data)[1] === '0'.charCodeAt(0))
+                    this.lastDirKeyIsDown = true;
+                else this.lastDirKeyIsDown = false;
+            }*/
+            if((<Buffer>data)[0] === 'A'.charCodeAt(0))
             {
-                this.lastKey = 2;
-                this.lastKeyTime = performance.now();
+                this.lastDirKey = 2;
+                if((<Buffer>data)[1] === '0'.charCodeAt(0))
+                    this.lastDirKeyIsDown = true;
+                else this.lastDirKeyIsDown = false;
             }
             else if((<Buffer>data)[0] === 'D'.charCodeAt(0))
             {
-                this.lastKey = 3;
-                this.lastKeyTime = performance.now();
+                this.lastDirKey = 3;
+                if((<Buffer>data)[1] === '0'.charCodeAt(0))
+                    this.lastDirKeyIsDown = true;
+                else this.lastDirKeyIsDown = false;
+            }
+            else if((<Buffer>data)[0] === ' '.charCodeAt(0))
+            {
+                if((<Buffer>data)[1] === '0'.charCodeAt(0))
+                    this.pendingJump = true;
             }
         })
     }

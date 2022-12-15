@@ -81,7 +81,6 @@ export class Game
                             if(this.characters[i].v[0] < -Game.MAX_AIRBORNE_HORIZ_SPEED)
                                 this.characters[i].v[0] = -Game.MAX_AIRBORNE_HORIZ_SPEED;
                         }
-                        // this.characters[i].v[0] = -Game.CHAR_HORIZ_SPEED;
                     }
                     else if(this.players[i].lastDirKey === 3) //d
                     {
@@ -91,7 +90,6 @@ export class Game
                             if(this.characters[i].v[0] > Game.MAX_AIRBORNE_HORIZ_SPEED)
                                 this.characters[i].v[0] = Game.MAX_AIRBORNE_HORIZ_SPEED;
                         }
-                        // this.characters[i].v[0] = Game.CHAR_HORIZ_SPEED;
                     }
                     this.characters[i].facing = this.players[i].lastDirKey;
                 }

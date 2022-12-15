@@ -32,7 +32,9 @@ export class Title
         var x = document.getElementById("game-window");
         x!.style.display = "block";
         document.removeEventListener('click', this.requestFullScreen);
-        let mySound = new Audio("../media/sounds/flutefleet.mp3");
-        mySound.play();
+
+        // NOT WORKING
+        var audio = new Audio("../media/sounds/flutefleet.mp3")
+        audio.play()
     }
 }

@@ -1,12 +1,15 @@
 import './style.css';
 import { Scene as Scene2d } from './2d/scene.js';
 import { Renderer as Renderer2d } from './2d/renderer.js';
+import { Title as Title } from './title.js';
 //import { Scene as Scene3d } from './3d/scene.js';
 //import { Renderer as Renderer3d } from './3d/renderer.js';
+import titleImg from '../media/title.png';
 
 var device: GPUDevice;
 var context: GPUCanvasContext;
 
+var title: Title;
 var scene: Scene2d;
 var renderer: Renderer2d;
 
@@ -30,7 +33,7 @@ function connect()
     });
     ws.addEventListener('message', function(event)
     {
-        //console.log('Message from server: ', event.data);
+        // console.log('Message from server: ', event.data);
         let renderData: RenderData;
         try
         {
@@ -98,28 +101,31 @@ async function main()
     meta.httpEquiv = "origin-trial";
     meta.content = "AifDXz6Baft5VffNQoN10WMq4EpmwWAkdtyo+wvoS4uxTh51wM6Tdu0/eUJcPT8bkV/5fVM/6JfOvnsvbGg8NwkAAABQeyJvcmlnaW4iOiJodHRwczovL3ZleGlvbmEubmdyb2suaW86NDQzIiwiZmVhdHVyZSI6IldlYkdQVSIsImV4cGlyeSI6MTY3NTIwOTU5OX0=";
     document.getElementsByTagName('head')[0].appendChild(meta);
-    
+
     const canvasDiv = document.createElement('div');
     const canvas = document.createElement('canvas');
     canvas.id = 'game-window';
     canvas.width = 1920;
     canvas.height = 1080;
-    //const canvas2d = document.createElement('canvas');
-    //canvas2d.width = 1920;
-    //canvas2d.height = 1080;
+    // const canvas2d = document.createElement('canvas');
+    // canvas2d.width = 1920;
+    // canvas2d.height = 1080;
     canvasDiv.appendChild(canvas);
     //canvasDiv.appendChild(canvas2d);
     document.body.appendChild(canvasDiv);
 
-    /*const canvas2dctx = canvas2d.getContext("2d");
-    if(canvas2dctx === null) return;
-    canvas2dctx.font = "bold 48px serif";
-    canvas2dctx.fillStyle = "blue";
-    canvas2dctx.fillText("Hello World!", 10, 10);*/
+    // const canvas2dctx = canvas2d.getContext("2d");
+    // if(canvas2dctx === null) return;
+    // canvas2dctx.font = "bold 48px serif";
+    // canvas2dctx.fillStyle = "blue";
+    // canvas2dctx.fillText("Hello World!", 10, 10);
 
     await initialize(canvas);
 
     scene = new Scene2d();
+
+    title = new Title();
+    title.create_title();
 
     renderer = new Renderer2d(device, context, scene);
 

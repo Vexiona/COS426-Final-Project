@@ -1,18 +1,38 @@
 import './style.css';
+import title from '../media/title.png';
 
-function main()
+export class Title
 {
-    var meta = document.createElement('meta');
-    meta.httpEquiv = "origin-trial";
-    meta.content = "AifDXz6Baft5VffNQoN10WMq4EpmwWAkdtyo+wvoS4uxTh51wM6Tdu0/eUJcPT8bkV/5fVM/6JfOvnsvbGg8NwkAAABQeyJvcmlnaW4iOiJodHRwczovL3ZleGlvbmEubmdyb2suaW86NDQzIiwiZmVhdHVyZSI6IldlYkdQVSIsImV4cGlyeSI6MTY3NTIwOTU5OX0=";
-    document.getElementsByTagName('head')[0].appendChild(meta);
-    
-    var img = document.createElement("img");
-    img.src = "https://ibb.co/QHzgPz6";
-    img.width = 1920;
-    img.height = 1080;
-    var src = document.getElementById("header");
-    src!.appendChild(img);
-}
+    create_title()
+    {
+        var img = document.createElement("img");
+        img.src = title;
+        img.width = 1280;
+        img.height = 720;
+        var src = document.body;
+        src!.appendChild(img);
+        var x = document.getElementById("game-window");
+        x!.style.display = "none";
+        document.addEventListener("click", this.requestFullScreen)
+    }
 
-window.onload = main;
+    requestFullScreen() {
+        // Supports most browsers and their versions.
+        var element: any = document.body;
+        var requestMethod = element.requestFullScreen || element.webkitRequestFullScreen || element.mozRequestFullScreen || element.msRequestFullScreen;
+    
+        if (requestMethod) { // Native full screen.
+            requestMethod.call(element);
+        } else if (typeof window.ActiveXObject !== "undefined") { // Older IE.
+            var wscript = new ActiveXObject("WScript.Shell");
+            if (wscript !== null) {
+                wscript.SendKeys("{F11}");
+            }
+        }
+        var x = document.getElementById("game-window");
+        x!.style.display = "block";
+        document.removeEventListener('click', this.requestFullScreen);
+        let mySound = new Audio("../media/sounds/flutefleet.mp3");
+        mySound.play();
+    }
+}

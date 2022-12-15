@@ -19,6 +19,8 @@ const URLS_CHARS = [char1, char2];
 
 export class Renderer
 {
+    private static FPS_ANIMATION: number = 20;
+
     private scene: Scene;
     private pno: number = 1;
 
@@ -571,7 +573,7 @@ export class Renderer
     {
         this.device.queue.writeBuffer(
             this.bufferData, 0, new Int32Array([
-                Math.floor(this.scene.time / 1000 * 20),
+                Math.floor(this.scene.time / 1000 * Renderer.FPS_ANIMATION),
             ]), 0, 1
         )
     }
@@ -587,9 +589,9 @@ export class Renderer
         );*/
         this.device.queue.writeBuffer(
             this.bufferCamera, 0, new Float32Array([
-                this.scene.characters[this.pno].position[0],
-                this.scene.characters[this.pno].position[1],
-                this.scene.characters[this.pno].position[2],
+                this.scene.characters[this.pno].pos[0],
+                this.scene.characters[this.pno].pos[1],
+                this.scene.characters[this.pno].pos[2],
                 this.scene.camera.fov
             ]), 0, 4
         );
@@ -597,19 +599,22 @@ export class Renderer
 
     private updateDynamic()
     {
-        const objectData: Float32Array = new Float32Array(16);
+        const objectData_f32: Float32Array = new Float32Array(4);
+        const objectData_i32: Int32Array = new Int32Array(4);
         for(let i = 0; i < 2; i++)
         {
-            objectData[8 * i] = this.scene.characters[i].position[0];
-            objectData[8 * i + 1] = this.scene.characters[i].position[1];
-            objectData[8 * i + 2] = this.scene.characters[i].position[2];
-            objectData[8 * i + 3] = 0.0;
-            objectData[8 * i + 4] = this.scene.characters[i].color[0];
-            objectData[8 * i + 5] = this.scene.characters[i].color[1];
-            objectData[8 * i + 6] = this.scene.characters[i].color[2];
-            objectData[8 * i + 7] = 0.0;
+            objectData_f32[0] = this.scene.characters[i].pos[0];
+            objectData_f32[1] = this.scene.characters[i].pos[1];
+            objectData_f32[2] = this.scene.characters[i].pos[2];
+            objectData_f32[3] = 0.0;
+            this.device.queue.writeBuffer(this.bufferDynamicObjects, 32*i, objectData_f32, 0, 4);
+
+            objectData_i32[0] = this.scene.characters[i].facing;
+            objectData_i32[1] = 0;
+            objectData_i32[2] = 0;
+            objectData_i32[3] = 0;
+            this.device.queue.writeBuffer(this.bufferDynamicObjects, 32*i+16, objectData_i32, 0, 4);
         }
-        this.device.queue.writeBuffer(this.bufferDynamicObjects, 0, objectData, 0, 16);
     }
 
     render = () =>

@@ -1,14 +1,14 @@
 import './style.css';
 import { Scene as Scene2d } from './2d/scene.js';
 import { Renderer as Renderer2d } from './2d/renderer.js';
-import { Scene as Scene3d } from './3d/scene.js';
-import { Renderer as Renderer3d } from './3d/renderer.js';
+//import { Scene as Scene3d } from './3d/scene.js';
+//import { Renderer as Renderer3d } from './3d/renderer.js';
 
 var device: GPUDevice;
 var context: GPUCanvasContext;
 
-var scene: Scene2d | Scene3d;
-var renderer: Renderer2d | Renderer3d;
+var scene: Scene2d;
+var renderer: Renderer2d;
 
 function connect()
 {

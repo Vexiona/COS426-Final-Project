@@ -20,15 +20,10 @@ struct Light //size 32
     intensity: f32,
 };
 
-struct Material
-{
-    color: vec3<f32>,
-};
-
 struct Object //size 32
 {
-    data: array<vec4<f32>, 1>,
-    material: Material,
+    data_f32: array<vec4<f32>, 1>,
+    data_i32: array<vec4<i32>, 1>,
 };
 
 struct Data //size 8
@@ -46,7 +41,7 @@ const CHAR_TEX_DIMS: vec2<f32> = vec2<f32>(192, 260);
 @group(0) @binding(0) var color_buffer: texture_storage_2d<rgba8unorm, write>; //screen output
 @group(0) @binding(1) var<uniform> data: Data;
 @group(0) @binding(2) var<uniform> camera: Camera;
-@group(0) @binding(3) var<uniform> characters: array<Object, 2>; //character positions
+@group(0) @binding(3) var<uniform> characters: array<Object, 2>; //character data
 @group(0) @binding(4) var<storage, read> scene_data: SceneData;
 @group(0) @binding(5) var<storage, read> lights: array<Light>;
 @group(0) @binding(6) var<storage, read> static_objects: array<Object>;
@@ -88,13 +83,22 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>)
     for(var i: i32 = 0; i < scene_data.nCharacters; i++)
     {
         if(i == data.player) { continue; }
-        let diff: vec2<f32> = real_pos - characters[i].data[0].xz;
+        let diff: vec2<f32> = real_pos - characters[i].data_f32[0].xz;
         let diff_scaled: vec2<f32> = vec2<f32>(diff.x, -diff.y) / CHAR_HEIGHT * 260 + CHAR_TEX_DIMS/2;
         if(0 <= diff_scaled.x && 0 <= diff_scaled.y && diff_scaled.x < CHAR_TEX_DIMS.x && diff_scaled.y < CHAR_TEX_DIMS.y)
         {
-            let char_sample_location: vec2<f32> = (diff_scaled + vec2<f32>(40, 20)) / vec2<f32>(textureDimensions(tex_chars));
-            let px: vec4<f32> = textureSampleLevel(tex_chars, rep_rep_sampler, char_sample_location, i, 0.0);
-            resColor = resColor * (1 - px.a) + px.rgb * px.a;
+            if(characters[i].data_i32[0].x == 3)
+            {
+                let char_sample_location: vec2<f32> = (diff_scaled + vec2<f32>(CHAR_TEX_DIMS.x * f32(data.frame % 9), 0) + vec2<f32>(40, 20)) / vec2<f32>(textureDimensions(tex_chars));
+                let px: vec4<f32> = textureSampleLevel(tex_chars, rep_rep_sampler, char_sample_location, i, 0.0);
+                resColor = resColor * (1 - px.a) + px.rgb * px.a;
+            }
+            else if(characters[i].data_i32[0].x == 2)
+            {
+                let char_sample_location: vec2<f32> = (diff_scaled + vec2<f32>(CHAR_TEX_DIMS.x * f32(data.frame % 9), 0) + vec2<f32>(40, 20 + 3 * 260)) / vec2<f32>(textureDimensions(tex_chars));
+                let px: vec4<f32> = textureSampleLevel(tex_chars, rep_rep_sampler, char_sample_location, i, 0.0);
+                resColor = resColor * (1 - px.a) + px.rgb * px.a;
+            }
         }
         /*if(diff.x * diff.x + diff.y * diff.y <= 0.5)
         {
@@ -109,13 +113,22 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>)
         }*/
     }
     //render player character last
-    let diff: vec2<f32> = real_pos - characters[data.player].data[0].xz;
+    let diff: vec2<f32> = real_pos - characters[data.player].data_f32[0].xz;
     let diff_scaled: vec2<f32> = vec2<f32>(diff.x, -diff.y) / CHAR_HEIGHT * 260 + CHAR_TEX_DIMS/2;
     if(0 <= diff_scaled.x && 0 <= diff_scaled.y && diff_scaled.x < CHAR_TEX_DIMS.x && diff_scaled.y < CHAR_TEX_DIMS.y)
     {
-        let char_sample_location: vec2<f32> = (diff_scaled + vec2<f32>(40, 20)) / vec2<f32>(textureDimensions(tex_chars));
-        let px: vec4<f32> = textureSampleLevel(tex_chars, rep_rep_sampler, char_sample_location, data.player, 0.0);
-        resColor = resColor * (1 - px.a) + px.rgb * px.a;
+        if(characters[data.player].data_i32[0].x == 3)
+        {
+            let char_sample_location: vec2<f32> = (diff_scaled + vec2<f32>(CHAR_TEX_DIMS.x * f32(data.frame % 9), 0) + vec2<f32>(40, 20)) / vec2<f32>(textureDimensions(tex_chars));
+            let px: vec4<f32> = textureSampleLevel(tex_chars, rep_rep_sampler, char_sample_location, data.player, 0.0);
+            resColor = resColor * (1 - px.a) + px.rgb * px.a;
+        }
+        else if(characters[data.player].data_i32[0].x == 2)
+        {
+            let char_sample_location: vec2<f32> = (diff_scaled + vec2<f32>(CHAR_TEX_DIMS.x * f32(data.frame % 9), 0) + vec2<f32>(40, 20 + 3 * 260)) / vec2<f32>(textureDimensions(tex_chars));
+            let px: vec4<f32> = textureSampleLevel(tex_chars, rep_rep_sampler, char_sample_location, data.player, 0.0);
+            resColor = resColor * (1 - px.a) + px.rgb * px.a;
+        }
     }
 
 

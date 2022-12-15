@@ -45,7 +45,8 @@ export class Player
             }
             else if((<Buffer>data)[0] === ' '.charCodeAt(0))
             {
-                this.pendingJump = true;
+                if((<Buffer>data)[1] === '0'.charCodeAt(0))
+                    this.pendingJump = true;
             }
         })
     }

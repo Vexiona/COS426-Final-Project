@@ -5,7 +5,7 @@ export class Player
     readonly userId: string;
     private ws: WebSocket.WebSocket;
 
-    public lastKey: any = undefined;
+    public lastKey: number = 0;
     public lastKeyTime: number = 0;
 
     constructor(userId: string, ws: WebSocket.WebSocket)

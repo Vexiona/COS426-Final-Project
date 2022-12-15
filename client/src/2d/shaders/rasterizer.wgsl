@@ -100,17 +100,6 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>)
                 resColor = resColor * (1 - px.a) + px.rgb * px.a;
             }
         }
-        /*if(diff.x * diff.x + diff.y * diff.y <= 0.5)
-        {
-            if(i == 0)
-            {
-                resColor = vec3<f32> (1.0, 1.0, 1.0);
-            }
-            if(i == 1)
-            {
-                resColor = vec3<f32> (0.0, 0.0, 1.0);
-            }
-        }*/
     }
     //render player character last
     let diff: vec2<f32> = real_pos - characters[data.player].data_f32[0].xz;

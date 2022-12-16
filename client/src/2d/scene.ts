@@ -1,9 +1,11 @@
 import { Character } from "../character.js";
+import { Gems } from "../gems.js";
 import { Camera } from "../camera.js";
 
 export class Scene
 {
     readonly characters: Character[]
+    readonly gems: Gems[]
     readonly camera: Camera
 
     time: number;
@@ -12,6 +14,7 @@ export class Scene
 
         this.time = 0;
         this.characters = new Array(2);
+        this.gems = new Array(10);
         for(let i=0; i < this.characters.length; i++)
         {
             const center: number[] = [
@@ -30,6 +33,17 @@ export class Scene
 
             this.characters[i] = new Character(center);
         }
+        for(let i=0; i < this.gems.length; i++)
+        {
+            const center: number[] = [
+                Math.random(),
+                Math.random(),
+                Math.random()
+            ];
+
+            this.gems[i] = new Gems(center);
+        }
+
 
         this.camera = new Camera([0.0, -10.0, 0.0]);
     }

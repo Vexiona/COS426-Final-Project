@@ -1,11 +1,14 @@
 import './style.css';
 import title from '../media/title.png';
 
+declare var require: any
+
 export class Title
 {
     create_title()
     {
         var img = document.createElement("img");
+        img.id ="title"
         img.src = title;
         img.width = 1280;
         img.height = 720;
@@ -13,6 +16,8 @@ export class Title
         src!.appendChild(img);
         var x = document.getElementById("game-window");
         x!.style.display = "none";
+        var y = document.getElementById("scoreboard-div");
+        y!.style.display = "none";
         document.addEventListener("click", this.requestFullScreen)
     }
 
@@ -31,10 +36,14 @@ export class Title
         }
         var x = document.getElementById("game-window");
         x!.style.display = "block";
+        var y = document.getElementById("scoreboard-div");
+        y!.style.display = "block";
+        var titleScreen = document.getElementById("title");
+        titleScreen!.style.display = "none";
         document.removeEventListener('click', this.requestFullScreen);
 
-        // NOT WORKING
-        var audio = new Audio("../media/sounds/flutefleet.mp3")
-        audio.play()
+        const flutefleet = require('../media/sounds/flutefleet.mp3');
+        var audio = new Audio(flutefleet);
+        audio.play();
     }
 }

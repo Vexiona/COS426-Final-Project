@@ -170,14 +170,39 @@ async function main()
     document.getElementsByTagName('head')[0].appendChild(meta);
 
     const canvasDiv = document.createElement('div');
+    canvasDiv.id = "container";
+
     const canvas = document.createElement('canvas');
     canvas.id = 'game-window';
     canvas.width = 1920;
     canvas.height = 1080;
+
     // const canvas2d = document.createElement('canvas');
     // canvas2d.width = 1920;
     // canvas2d.height = 1080;
     canvasDiv.appendChild(canvas);
+
+    const scoreboardDiv = document.createElement('div');
+    scoreboardDiv.id = "scoreboard-div"
+    scoreboardDiv.style.position = 'absolute';
+    scoreboardDiv.style.zIndex = "1";
+    scoreboardDiv.style.right = '30px';
+    const scoreboard = document.createElement('div');
+    scoreboard.classList.add('scoreboard');
+    scoreboard.style.height = '100px';
+    scoreboard.style.width = '400px';
+    scoreboard.style.textAlign = 'center';
+    var p1ScoreText= document.createElement('H1');
+    p1ScoreText.id = "p1-score";
+    p1ScoreText.innerHTML = "Player 1 Gems: 0";
+    var p2ScoreText= document.createElement('H1');
+    p1ScoreText.id = "p2-score";
+    p2ScoreText.innerHTML = "Player 2 Gems: 0";
+    scoreboard.appendChild(p1ScoreText);
+    scoreboard.appendChild(p2ScoreText);
+
+    scoreboardDiv.appendChild(scoreboard);
+    canvasDiv.appendChild(scoreboardDiv);
     //canvasDiv.appendChild(canvas2d);
     document.body.appendChild(canvasDiv);
 

@@ -1,5 +1,3 @@
-import { vec3 } from "gl-matrix";
-
 export class Camera
 {
     position: Float32Array;

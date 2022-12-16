@@ -1,10 +1,10 @@
 export class Character
 {
-    pos: Float32Array
+    pos: number[];
     facing: number = 3;
 
     constructor(position: number[])
     {
-        this.pos = new Float32Array(position);
+        this.pos = position;
     }
 }

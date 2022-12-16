@@ -196,7 +196,7 @@ async function main()
     p1ScoreText.id = "p1-score";
     p1ScoreText.innerHTML = "Player 1 Gems: 0";
     var p2ScoreText= document.createElement('H1');
-    p1ScoreText.id = "p2-score";
+    p2ScoreText.id = "p2-score";
     p2ScoreText.innerHTML = "Player 2 Gems: 0";
     scoreboard.appendChild(p1ScoreText);
     scoreboard.appendChild(p2ScoreText);

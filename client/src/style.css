@@ -19,3 +19,10 @@ canvas {
 .scoreboard {
     background-color: white;
 }
+
+#p1-score {
+    font-family: sans-serif;
+}
+#p2-score {
+    font-family: sans-serif;
+}

@@ -44,6 +44,7 @@ export class Title
 
         const flutefleet = require('../media/sounds/flutefleet.mp3');
         var audio = new Audio(flutefleet);
+        audio.loop = true;
         audio.play();
     }
 }

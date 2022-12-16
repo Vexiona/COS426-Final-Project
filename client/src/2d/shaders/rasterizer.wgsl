@@ -55,6 +55,7 @@ const CHAR_TEX_DIMS: vec2<f32> = vec2<f32>(192, 260);
 @group(2) @binding(1) var tex_bgs: texture_2d_array<f32>;
 @group(2) @binding(2) var<storage, read> tex_bgs_scales: array<f32>;
 @group(2) @binding(3) var tex_chars: texture_2d_array<f32>;
+@group(2) @binding(4) var tex_gem: texture_2d<f32>;
 
 @compute @workgroup_size(1,1,1)
 fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>)
@@ -123,6 +124,9 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>)
 
     let font: vec4<f32> = textureSampleLevel(tex_font, rep_rep_sampler, tex_pos, 0.0);
     resColor = resColor.rgb * (1 - font.a) + font.rgb * font.a;
+
+    let gem: vec4<f32> = textureSampleLevel(tex_gem, rep_rep_sampler, tex_pos, 0.0);
+    resColor = resColor.rgb * (1 - gem.a) + gem.rgb * gem.a;
 
     textureStore(color_buffer, screen_pos, vec4<f32>(resColor, 1.0));
 }

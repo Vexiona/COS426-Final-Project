@@ -17,6 +17,8 @@ const URLS_BG = [
 import char1 from '../../media/char/1.png';
 import char2 from '../../media/char/2.png';
 const URLS_CHARS = [char1, char2];
+import gem from '../../media/gems/gems.png';
+const URL_GEM = gem;
 
 export class Renderer
 {
@@ -47,6 +49,8 @@ export class Renderer
     private buffer_bg_scales!: GPUBuffer;
     private tex_chars!: GPUTexture;
     private tex_chars_view!: GPUTextureView;
+    private tex_gem!: GPUTexture;
+    private tex_gem_view!: GPUTextureView;
 
     private bufferData!: GPUBuffer;
     private bufferCamera!: GPUBuffer;
@@ -243,6 +247,9 @@ export class Renderer
 
         this.tex_chars = await this.webGPUTextureArrayFromImageUrls(URLS_CHARS);
         this.tex_chars_view = this.tex_chars.createView();
+
+        this.tex_gem = await this.webGPUTextureFromImageUrl(URL_GEM);
+        this.tex_gem_view = this.tex_gem.createView();
     }
 
     private makePipeline()
@@ -427,6 +434,11 @@ export class Renderer
                     visibility: GPUShaderStage.COMPUTE,
                     texture: { viewDimension: '2d-array' }
                 },
+                {
+                    binding: 4,
+                    visibility: GPUShaderStage.COMPUTE,
+                    texture: {}
+                },
             ]
         });
 
@@ -450,6 +462,10 @@ export class Renderer
                 {
                     binding: 3,
                     resource: this.tex_chars_view
+                },
+                {
+                    binding: 4,
+                    resource: this.tex_gem_view
                 },
             ]
         });

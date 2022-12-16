@@ -3,6 +3,7 @@ import math from 'mathjs';
 import { Player } from "./player.js";
 import { CharacterData } from "./character.js";
 import { Level } from './2d/level.js';
+import { GemData } from './gems.js';
 
 export class Game
 {
@@ -20,6 +21,7 @@ export class Game
     private players: Player[];
 
     private characters: CharacterData[];
+    private gems: GemData[];
     private lastPhyUpdate: number;
 
     constructor(players: Player[])
@@ -29,6 +31,21 @@ export class Game
         for(let i = 0; i < this.players.length; i++)
             this.characters[i] = new CharacterData();
         this.lastPhyUpdate = performance.now();
+        // Update this with real gem positions?
+        this.gems = []
+        for(let i = 0; i < 10; i++)
+            this.gems[i] = new GemData([Math.random(), Math.random(), Math.random()]);
+    }
+
+    // Is this right??? ALSO it is untested and have to pass data to client
+    private intersect_gems(real_pos: number[])
+    {
+        for (let i = 0; i < this.gems.length; i++) {
+            const gemPos = this.gems[i].pos;
+            if (Math.pow(gemPos[0] - real_pos[0], 2) + Math.pow(gemPos[1] - real_pos[1], 2) +
+                Math.pow(gemPos[2] - real_pos[2], 2) <= 100) return true;
+        }
+        return false;
     }
 
     private intersect_right(real_pos: number[])

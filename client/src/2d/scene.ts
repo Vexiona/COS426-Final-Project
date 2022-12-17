@@ -102,8 +102,8 @@ export class Scene
             var img = document.createElement("img");
             img.id ="p1wins"
             img.src = player1WinImg;
-            img.width = 1920;
-            img.height = 1080;
+            img.width = screen.width;
+            img.height = screen.height;
             var src = document.body;
             src!.appendChild(img);
             var x = document.getElementById("game-window");
@@ -116,8 +116,8 @@ export class Scene
             var img = document.createElement("img");
             img.id ="p2wins"
             img.src = player2WinImg;
-            img.width = 1920;
-            img.height = 1080;
+            img.width = screen.width;
+            img.height = screen.height;
             var src = document.body;
             src!.appendChild(img);
             var x = document.getElementById("game-window");

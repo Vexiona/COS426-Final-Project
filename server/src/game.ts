@@ -31,9 +31,7 @@ export class Game
         for(let i = 0; i < this.players.length; i++)
             this.characters[i] = new CharacterData();
         this.lastPhyUpdate = performance.now();
-        // Would it be possible to randomly generate positions and communicate that to frontend?
-        // It would be best to only communicate it once at the beginning and never again
-        // This is code to generate 10 random locations out of 30 good spots
+        // Old locations (too easy)
         let gemLocations = [
             [8,  0, 3],
             [10, 0, 4.5], [8, 0, 6], [10, 0, 7.5],
@@ -44,7 +42,15 @@ export class Game
             [22, 0, 12.5], [24, 0, 14], [26, 0, 15.5],
             [28, 0, 14], [30, 0, 12.5], [32, 0, 11],
             [30, 0, 9.5], [28, 0, 8], [8, 0, 9],
-            [10, 0, 10.5], [13, 0, 12], [17, 0, 13.5]
+            [10, 0, 10.5], [13, 0, 12], [17, 0, 13.5],
+            [8, 0, 11], [10, 0, 13], [13, 0, 9],
+            [13, 0, 14], [15, 0, 3], [15, 0, 9],
+            [17, 0, 5], [17, 0, 10], [19, 0, 9],
+            [20, 0, 14], [22, 0, 15], [24, 0, 10],
+            [24, 0, 16], [26, 0, 2], [26, 0, 8],
+            [26, 0, 10], [26, 0, 12], [26, 0, 17],
+            [28, 0, 10], [28, 0, 16], [30, 0, 15],
+            [32, 0, 14]
         ]
         // Generate 10 random locations out of the above
         let random_spots = [];
@@ -71,7 +77,7 @@ export class Game
             if (this.gems[i].collected) continue;
             const gemPos = this.gems[i].pos;
             if (Math.pow(gemPos[0] - real_pos[0], 2) + Math.pow(gemPos[1] - real_pos[1], 2) +
-                Math.pow(gemPos[2] - real_pos[2], 2) <= 0.5) {
+                Math.pow(gemPos[2] - real_pos[2], 2) <= 0.25) {
                     this.gems[i].collected = true;
                     return true;
                 }

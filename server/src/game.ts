@@ -4,6 +4,7 @@ import { Player } from "./player.js";
 import { CharacterData } from "./character.js";
 import { Level } from './2d/level.js';
 import { GemData } from './gems.js';
+import e from 'express';
 
 export class Game
 {
@@ -23,6 +24,7 @@ export class Game
     private characters: CharacterData[];
     private gems: GemData[];
     private lastPhyUpdate: number;
+    private gemsSent: boolean = false;
 
     constructor(players: Player[])
     {
@@ -306,59 +308,107 @@ export class Game
         }
 
         this.lastPhyUpdate = time;
-        return <RenderData>{
-            message: "renderData",
-            time: time,
-            player1: {
-                pos: this.characters[0].pos,
-                facing: this.characters[0].facing,
-                score: this.characters[0].score
-            },
-            player2: {
-                pos: this.characters[1].pos,
-                facing: this.characters[1].facing,
-                score: this.characters[1].score
-            },
-            gem1: {
-                pos: this.gems[0].pos,
-                collected: this.gems[0].collected,
-            },
-            gem2: {
-                pos: this.gems[1].pos,
-                collected: this.gems[1].collected,
-            },
-            gem3: {
-                pos: this.gems[2].pos,
-                collected: this.gems[2].collected,
-            },
-            gem4: {
-                pos: this.gems[3].pos,
-                collected: this.gems[3].collected,
-            },
-            gem5: {
-                pos: this.gems[4].pos,
-                collected: this.gems[4].collected,
-            },
-            gem6: {
-                pos: this.gems[5].pos,
-                collected: this.gems[5].collected,
-            },
-            gem7: {
-                pos: this.gems[6].pos,
-                collected: this.gems[6].collected,
-            },
-            gem8: {
-                pos: this.gems[7].pos,
-                collected: this.gems[7].collected,
-            },
-            gem9: {
-                pos: this.gems[8].pos,
-                collected: this.gems[8].collected,
-            },
-            gem10: {
-                pos: this.gems[9].pos,
-                collected: this.gems[9].collected,
-            }
-        };
+        if (!this.gemsSent) {
+            return <RenderData>{
+                message: "renderData",
+                time: time,
+                player1: {
+                    pos: this.characters[0].pos,
+                    facing: this.characters[0].facing,
+                    score: this.characters[0].score
+                },
+                player2: {
+                    pos: this.characters[1].pos,
+                    facing: this.characters[1].facing,
+                    score: this.characters[1].score
+                },
+                gem1: {
+                    pos: this.gems[0].pos,
+                    collected: this.gems[0].collected,
+                },
+                gem2: {
+                    pos: this.gems[1].pos,
+                    collected: this.gems[1].collected,
+                },
+                gem3: {
+                    pos: this.gems[2].pos,
+                    collected: this.gems[2].collected,
+                },
+                gem4: {
+                    pos: this.gems[3].pos,
+                    collected: this.gems[3].collected,
+                },
+                gem5: {
+                    pos: this.gems[4].pos,
+                    collected: this.gems[4].collected,
+                },
+                gem6: {
+                    pos: this.gems[5].pos,
+                    collected: this.gems[5].collected,
+                },
+                gem7: {
+                    pos: this.gems[6].pos,
+                    collected: this.gems[6].collected,
+                },
+                gem8: {
+                    pos: this.gems[7].pos,
+                    collected: this.gems[7].collected,
+                },
+                gem9: {
+                    pos: this.gems[8].pos,
+                    collected: this.gems[8].collected,
+                },
+                gem10: {
+                    pos: this.gems[9].pos,
+                    collected: this.gems[9].collected,
+                }
+            };
+        }
+        else {
+            return <RenderData>{
+                message: "renderData",
+                time: time,
+                player1: {
+                    pos: this.characters[0].pos,
+                    facing: this.characters[0].facing,
+                    score: this.characters[0].score
+                },
+                player2: {
+                    pos: this.characters[1].pos,
+                    facing: this.characters[1].facing,
+                    score: this.characters[1].score
+                },
+                gem1: {
+                    collected: this.gems[0].collected,
+                },
+                gem2: {
+                    collected: this.gems[1].collected,
+                },
+                gem3: {
+                    collected: this.gems[2].collected,
+                },
+                gem4: {
+                    collected: this.gems[3].collected,
+                },
+                gem5: {
+                    collected: this.gems[4].collected,
+                },
+                gem6: {
+                    collected: this.gems[5].collected,
+                },
+                gem7: {
+                    collected: this.gems[6].collected,
+                },
+                gem8: {
+                    collected: this.gems[7].collected,
+                },
+                gem9: {
+                    collected: this.gems[8].collected,
+                },
+                gem10: {
+                    collected: this.gems[9].collected,
+                }
+            };
+        }
     }
 }

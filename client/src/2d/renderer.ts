@@ -173,7 +173,7 @@ export class Renderer
 
         //static objects
         this.bufferStaticObjects = this.device.createBuffer({
-            size: 32 * this.scene.characters.length,
+            size: 32 * this.scene.gems.length,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         });
 
@@ -563,7 +563,7 @@ export class Renderer
         sceneData[0] = this.width;
         sceneData[1] = this.height;
         sceneData[2] = this.scene.characters.length; //dynamic
-        sceneData[3] = 0; //static
+        sceneData[3] = this.scene.gems.length; //nGems
         sceneData[4] = 7; //background layers count
         sceneData[5] = Level.colliders.length;
         this.device.queue.writeBuffer(this.bufferScene, 0, sceneData, 0, 6);
@@ -573,18 +573,6 @@ export class Renderer
             this.device.queue.writeBuffer(this.bufferEnv, 80 * i, Level.colliders[i].handles, 0, 16);
             this.device.queue.writeBuffer(this.bufferEnv, 80 * i + 64, Level.colliders[i].info, 0, 4);
         }
-
-        const objectData: Float32Array = new Float32Array(8 * this.scene.characters.length);
-        objectData[0] = 0.0; //n.x
-        objectData[1] = 0.0; //n.y
-        objectData[2] = 1.0; //n.z
-        objectData[3] = -1.0; //dist
-        objectData[4] = 0.5; //r
-        objectData[5] = 0.0; //g
-        objectData[6] = 0.0; //b
-        objectData[7] = 0.0;
-
-        this.device.queue.writeBuffer(this.bufferStaticObjects, 0, objectData, 0, 8);
     }
 
     setPlayer(pno: number)
@@ -621,6 +609,28 @@ export class Renderer
         );
     }
 
+    private updateGems()
+    {
+        const objectData_f32: Float32Array = new Float32Array(4);
+        const objectData_i32: Int32Array = new Int32Array(4);
+        for(let i = 0; i < this.scene.gems.length; i++)
+        {
+            console.log(this.scene.gems[i].pos);
+            objectData_f32[0] = this.scene.gems[i].pos[0];
+            objectData_f32[1] = this.scene.gems[i].pos[1];
+            objectData_f32[2] = this.scene.gems[i].pos[2];
+            objectData_f32[3] = 0.0;
+            console.log(objectData_f32);
+            this.device.queue.writeBuffer(this.bufferStaticObjects, 32 * i, objectData_f32, 0, 4);
+
+            objectData_i32[0] = this.scene.gems[i].collected ? 1 : 0;
+            objectData_i32[1] = 0;
+            objectData_i32[2] = 0;
+            objectData_i32[3] = 0;
+            this.device.queue.writeBuffer(this.bufferStaticObjects, 32 * i + 16, objectData_i32, 0, 4);
+        }
+    }
+
     private updateDynamic()
     {
         const objectData_f32: Float32Array = new Float32Array(4);
@@ -645,6 +655,7 @@ export class Renderer
     {
         this.updateData();
         this.updateCamera();
+        this.updateGems();
         this.updateDynamic();
 
         const commandEncoder: GPUCommandEncoder = this.device.createCommandEncoder();

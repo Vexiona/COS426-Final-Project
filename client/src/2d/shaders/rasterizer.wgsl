@@ -4,12 +4,12 @@ struct Camera //size 16
     scale: f32,
 };
 
-struct SceneData //size 24
+struct SceneData //size 28
 {
     width: i32,
     height: i32,
     nCharacters: i32,
-    nStaticObjects: i32,
+    nGems: i32,
     nBackgroundLayers: i32,
     nColliders: i32,
 };
@@ -44,6 +44,8 @@ const INFINITY: f32 = 100000.0;
 const HEIGHT_SCREEN: f32 = 10.0; //height in meters of screen
 const CHAR_HEIGHT: f32 = 1;
 const CHAR_TEX_DIMS: vec2<f32> = vec2<f32>(192, 260);
+const GEM_HEIGHT: f32 = 0.7;
+const GEM_TEX_DIMS: vec2<f32> = vec2<f32>(100, 100);
 
 @group(0) @binding(0) var color_buffer: texture_storage_2d<rgba8unorm, write>; //screen output
 @group(0) @binding(1) var<uniform> data: Data;
@@ -119,6 +121,23 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>)
             resColor = vec3<f32>(0.5, 0.6, 0.5);
         }
     }
+
+    //render gems
+    for(var i: i32 = 0; i < scene_data.nGems; i++)
+    {
+        if(static_objects[i].data_i32[0].x == 0)
+        {
+            let gem_diff: vec2<f32> = real_pos - static_objects[i].data_f32[0].xz;
+            let gem_diff_scaled: vec2<f32> = vec2<f32>(gem_diff.x, -gem_diff.y) / GEM_HEIGHT * GEM_TEX_DIMS.y + GEM_TEX_DIMS/2;
+            if(0 <= gem_diff_scaled.x && 0 <= gem_diff_scaled.y && gem_diff_scaled.x < GEM_TEX_DIMS.x && gem_diff_scaled.y < GEM_TEX_DIMS.y)
+            {
+                let gem_sample_location: vec2<f32> = (gem_diff_scaled) / vec2<f32>(textureDimensions(tex_gem));
+                let px: vec4<f32> = textureSampleLevel(tex_gem, rep_rep_sampler, gem_sample_location, 0.0);
+                resColor = resColor.rgb * (1 - px.a) + px.rgb * px.a;
+            }
+        }
+    }
+
     //render the other characters
     for(var i: i32 = 0; i < scene_data.nCharacters; i++)
     {
@@ -141,6 +160,7 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>)
             }
         }
     }
+
     //render player character last
     let diff: vec2<f32> = real_pos - characters[data.player].data_f32[0].xz;
     let diff_scaled: vec2<f32> = vec2<f32>(diff.x, -diff.y) / CHAR_HEIGHT * 260 + CHAR_TEX_DIMS/2;
@@ -163,9 +183,6 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>)
 
     //let font: vec4<f32> = textureSampleLevel(tex_font, rep_rep_sampler, tex_pos, 0.0);
     //resColor = resColor.rgb * (1 - font.a) + font.rgb * font.a;
-
-    //let gem: vec4<f32> = textureSampleLevel(tex_gem, rep_rep_sampler, tex_pos, 0.0);
-    //resColor = resColor.rgb * (1 - gem.a) + gem.rgb * gem.a;
 
     textureStore(color_buffer, screen_pos, vec4<f32>(resColor, 1.0));
 }

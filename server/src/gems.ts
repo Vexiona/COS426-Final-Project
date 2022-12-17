@@ -1,6 +1,7 @@
 export class GemData
 {
     pos: number[] = [0, 0, 0];
+    collected: boolean = false;
 
     constructor(position: number[])
     {

@@ -1,18 +1,23 @@
 import { Character } from "../character.js";
 import { Gems } from "../gems.js";
 import { Camera } from "../camera.js";
+import player1WinImg from '../../media/p1wins.png';
+import player2WinImg from '../../media/p2wins.png';
 
 export class Scene
 {
     readonly characters: Character[]
     readonly gems: Gems[]
+    // readonly gemLocations: number[][]
     readonly camera: Camera
+    gameover: boolean
 
     time: number;
 
     constructor() {
 
         this.time = 0;
+        this.gameover = false;
         this.characters = new Array(2);
         this.gems = new Array(10);
         for(let i=0; i < this.characters.length; i++)
@@ -36,9 +41,9 @@ export class Scene
         for(let i=0; i < this.gems.length; i++)
         {
             const center: number[] = [
-                Math.random(),
-                Math.random(),
-                Math.random()
+                0.0,
+                0.0,
+                0.0
             ];
 
             this.gems[i] = new Gems(center);
@@ -54,10 +59,47 @@ export class Scene
         this.characters[0].pos[1] = renderData.player1!.pos[1];
         this.characters[0].pos[2] = renderData.player1!.pos[2];
         this.characters[0].facing = renderData.player1!.facing;
+        this.characters[0].score = renderData.player1!.score;
         this.characters[1].pos[0] = renderData.player2!.pos[0];
         this.characters[1].pos[1] = renderData.player2!.pos[1];
         this.characters[1].pos[2] = renderData.player2!.pos[2];
         this.characters[1].facing = renderData.player2!.facing;
+        this.characters[1].score = renderData.player2!.score;
         this.time = renderData.time!;
+        // Here update gems positions?
+        // Also here update score on scoreboard with new values
+        var p1ScoreText= document.getElementById('p1-score');
+        p1ScoreText!.innerHTML = "Player 1 Gems: " + this.characters[0].score;
+        var p2ScoreText= document.getElementById('p2-score');
+        p2ScoreText!.innerHTML = "Player 2 Gems: " + this.characters[1].score;
+
+        if (this.characters[0].score >= 5 && !this.gameover) {
+            var img = document.createElement("img");
+            img.id ="p1wins"
+            img.src = player1WinImg;
+            img.width = 1920;
+            img.height = 1080;
+            var src = document.body;
+            src!.appendChild(img);
+            var x = document.getElementById("game-window");
+            x!.style.display = "none";
+            var y = document.getElementById("scoreboard-div");
+            y!.style.display = "none";
+            this.gameover = true;
+        }
+        else if (this.characters[1].score >= 5 && !this.gameover) {
+            var img = document.createElement("img");
+            img.id ="p2wins"
+            img.src = player2WinImg;
+            img.width = 1920;
+            img.height = 1080;
+            var src = document.body;
+            src!.appendChild(img);
+            var x = document.getElementById("game-window");
+            x!.style.display = "none";
+            var y = document.getElementById("scoreboard-div");
+            y!.style.display = "none";
+            this.gameover = true;
+        }
     }
 }

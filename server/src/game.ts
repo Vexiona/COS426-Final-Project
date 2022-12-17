@@ -297,7 +297,6 @@ export class Game
             ];
             if (this.intersect_gems(new_pos)) {
                 this.characters[i].score += 1;
-                // We might have to add a score attribute to CharacterData and pass that through RenderData
             }
         }
 
@@ -314,6 +313,46 @@ export class Game
                 pos: this.characters[1].pos,
                 facing: this.characters[1].facing,
                 score: this.characters[1].score
+            },
+            gem1: {
+                pos: this.gems[0].pos,
+                collected: this.gems[0].collected,
+            },
+            gem2: {
+                pos: this.gems[1].pos,
+                collected: this.gems[1].collected,
+            },
+            gem3: {
+                pos: this.gems[2].pos,
+                collected: this.gems[2].collected,
+            },
+            gem4: {
+                pos: this.gems[3].pos,
+                collected: this.gems[3].collected,
+            },
+            gem5: {
+                pos: this.gems[4].pos,
+                collected: this.gems[4].collected,
+            },
+            gem6: {
+                pos: this.gems[5].pos,
+                collected: this.gems[5].collected,
+            },
+            gem7: {
+                pos: this.gems[6].pos,
+                collected: this.gems[6].collected,
+            },
+            gem8: {
+                pos: this.gems[7].pos,
+                collected: this.gems[7].collected,
+            },
+            gem9: {
+                pos: this.gems[8].pos,
+                collected: this.gems[8].collected,
+            },
+            gem10: {
+                pos: this.gems[9].pos,
+                collected: this.gems[9].collected,
             }
         };
     }

@@ -35,7 +35,7 @@ export class Game
         // It would be best to only communicate it once at the beginning and never again
         // This is code to generate 10 random locations out of 30 good spots
         let gemLocations = [
-            [3, 0, 1], [5.5, 0, 2.5], [8,  0, 3],
+            [8,  0, 3],
             [10, 0, 4.5], [8, 0, 6], [10, 0, 7.5],
             [12, 0, 7.5],  [14, 0, 1], [14, 0, 6.5],
             [17, 0, 7.5], [20, 0, 6.5], [18.5, 0, 2.5],
@@ -46,10 +46,10 @@ export class Game
             [30, 0, 9.5], [28, 0, 8], [8, 0, 9],
             [10, 0, 10.5], [13, 0, 12], [17, 0, 13.5]
         ]
-        // Generate 10 random locations out of 30
+        // Generate 10 random locations out of the above
         let random_spots = [];
         while(random_spots.length < 10){
-            var r = Math.floor(Math.random() * 30);
+            var r = Math.floor(Math.random() * gemLocations.length);
             if(random_spots.indexOf(r) === -1) random_spots.push(r);
         }
         this.gems = []
@@ -65,14 +65,13 @@ export class Game
         }
     }
 
-    // Is this right??? ALSO it is untested and have to pass data to client
     private intersect_gems(real_pos: number[])
     {
         for (let i = 0; i < this.gems.length; i++) {
             if (this.gems[i].collected) continue;
             const gemPos = this.gems[i].pos;
             if (Math.pow(gemPos[0] - real_pos[0], 2) + Math.pow(gemPos[1] - real_pos[1], 2) +
-                Math.pow(gemPos[2] - real_pos[2], 2) <= 45) {
+                Math.pow(gemPos[2] - real_pos[2], 2) <= 0.5) {
                     this.gems[i].collected = true;
                     return true;
                 }

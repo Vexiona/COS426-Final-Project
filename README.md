@@ -1,5 +1,5 @@
 # COS426-Final-Project
-The greatest game ever made
+To run local version:
 cd ./server
 npm run build
 cd ../client

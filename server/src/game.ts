@@ -31,19 +31,51 @@ export class Game
         for(let i = 0; i < this.players.length; i++)
             this.characters[i] = new CharacterData();
         this.lastPhyUpdate = performance.now();
-        // Update this with real gem positions?
+        // Would it be possible to randomly generate positions and communicate that to frontend?
+        // It would be best to only communicate it once at the beginning and never again
+        // This is code to generate 10 random locations out of 30 good spots
+        let gemLocations = [
+            [3, 0, 1], [5.5, 0, 2.5], [8,  0, 3],
+            [10, 0, 4.5], [8, 0, 6], [10, 0, 7.5],
+            [12, 0, 7.5],  [14, 0, 1], [14, 0, 6.5],
+            [17, 0, 7.5], [20, 0, 6.5], [18.5, 0, 2.5],
+            [21.5, 0, 5.5], [23, 0, 4], [26, 0, 6.5],
+            [24, 0, 8], [22, 0, 9.5], [20, 0, 11],
+            [22, 0, 12.5], [24, 0, 14], [26, 0, 15.5],
+            [28, 0, 14], [30, 0, 12.5], [32, 0, 11],
+            [30, 0, 9.5], [28, 0, 8], [8, 0, 9],
+            [10, 0, 10.5], [13, 0, 12], [17, 0, 13.5]
+        ]
+        // Generate 10 random locations out of 30
+        let random_spots = [];
+        while(random_spots.length < 10){
+            var r = Math.floor(Math.random() * 30);
+            if(random_spots.indexOf(r) === -1) random_spots.push(r);
+        }
         this.gems = []
-        for(let i = 0; i < 10; i++)
-            this.gems[i] = new GemData([Math.random(), Math.random(), Math.random()]);
+        for(let i=0; i < 10; i++)
+        {
+            const center: number[] = [
+                gemLocations[Math.floor(random_spots[i])][0],
+                gemLocations[Math.floor(random_spots[i])][1],
+                gemLocations[Math.floor(random_spots[i])][2]
+            ];
+
+            this.gems[i] = new GemData(center);
+        }
     }
 
     // Is this right??? ALSO it is untested and have to pass data to client
     private intersect_gems(real_pos: number[])
     {
         for (let i = 0; i < this.gems.length; i++) {
+            if (this.gems[i].collected) continue;
             const gemPos = this.gems[i].pos;
             if (Math.pow(gemPos[0] - real_pos[0], 2) + Math.pow(gemPos[1] - real_pos[1], 2) +
-                Math.pow(gemPos[2] - real_pos[2], 2) <= 100) return true;
+                Math.pow(gemPos[2] - real_pos[2], 2) <= 45) {
+                    this.gems[i].collected = true;
+                    return true;
+                }
         }
         return false;
     }
@@ -256,6 +288,17 @@ export class Game
                     this.characters[i].grounded = true;
                 }*/
             }
+            // Test for intersection with gems?
+            let new_pos;
+            new_pos = [
+                this.characters[i].pos[0],
+                this.characters[i].pos[1],
+                this.characters[i].pos[2]
+            ];
+            if (this.intersect_gems(new_pos)) {
+                this.characters[i].score += 1;
+                // We might have to add a score attribute to CharacterData and pass that through RenderData
+            }
         }
 
         this.lastPhyUpdate = time;
@@ -264,11 +307,13 @@ export class Game
             time: time,
             player1: {
                 pos: this.characters[0].pos,
-                facing: this.characters[0].facing
+                facing: this.characters[0].facing,
+                score: this.characters[0].score
             },
             player2: {
                 pos: this.characters[1].pos,
-                facing: this.characters[1].facing
+                facing: this.characters[1].facing,
+                score: this.characters[1].score
             }
         };
     }

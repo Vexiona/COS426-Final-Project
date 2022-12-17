@@ -161,11 +161,11 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>)
     }
 
 
-    let font: vec4<f32> = textureSampleLevel(tex_font, rep_rep_sampler, tex_pos, 0.0);
-    resColor = resColor.rgb * (1 - font.a) + font.rgb * font.a;
+    //let font: vec4<f32> = textureSampleLevel(tex_font, rep_rep_sampler, tex_pos, 0.0);
+    //resColor = resColor.rgb * (1 - font.a) + font.rgb * font.a;
 
-    let gem: vec4<f32> = textureSampleLevel(tex_gem, rep_rep_sampler, tex_pos, 0.0);
-    resColor = resColor.rgb * (1 - gem.a) + gem.rgb * gem.a;
+    //let gem: vec4<f32> = textureSampleLevel(tex_gem, rep_rep_sampler, tex_pos, 0.0);
+    //resColor = resColor.rgb * (1 - gem.a) + gem.rgb * gem.a;
 
     textureStore(color_buffer, screen_pos, vec4<f32>(resColor, 1.0));
 }

@@ -42,6 +42,10 @@ const client = {
                 type: 'asset/resource',
             },
             {
+                test: /\.wav$/i,
+                type: 'asset/resource',
+            },
+            {
                 test: /\.wgsl$/i,
                 use: 'ts-shader-loader',
             },

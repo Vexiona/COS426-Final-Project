@@ -90,9 +90,8 @@ export class Scene
         this.gems[7].collected = renderData.gem8!.collected;
         this.gems[8].collected = renderData.gem9!.collected;
         this.gems[9].collected = renderData.gem10!.collected;
-        console.log(this.gems[0]);
 
-        // Have to make gems disappear if collected
+        // Have to make gems disappear if collected (maybe just move them off screen)
         
         var p1ScoreText= document.getElementById('p1-score');
         p1ScoreText!.innerHTML = "Player 1 Gems: " + this.characters[0].score;
